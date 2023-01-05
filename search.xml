@@ -47,7 +47,7 @@
 <p>​		    因此得出结论： 如果需要提高系统的启动速度，当前默认情况就是这样。如果需要提高响应速度，我们应该设置Servlet的初始化时机。<br>4）Servlet的初始化时机：</p>
 <p>​    	   默认是第一次接收请求时，实例化，初始化<br>​		   可以通过<load-on-startup>来设置servlet启动的先后顺序,数字越小，启动越靠前，最小值0<br>5） Servlet在容器中是：单例的、线程不安全的</load-on-startup></p>
 <pre><code>   单例：所有的请求都是同一个实例去响应
-   不安全：一个线程需要根据这个实例中的某个成员变量值去做逻辑判断。但是在中间某个时机，另一个线程改变了这个成员变量的值，从而导致第一个线程的执行路径发生了变化
+      不安全：一个线程需要根据这个实例中的某个成员变量值去做逻辑判断。但是在中间某个时机，另一个线程改变了这个成员变量的值，从而导致第一个线程的执行路径发生了变化
 </code></pre>
 <p>​          （线程不安全就是说在一个线程操作的过程中，另一个线程将共享域中的数据做了修改，导致访问结果发生错误的过程；举例来说，一个人去上厕所发现里面有纸，然后他就往里走，这时候有一个人把纸拿走了）</p>
 <p><img src="/2022/12/25/Servlet/image-20221225113107433.png" alt="image-20221225113107433">			</p>
@@ -247,6 +247,12 @@
 <p><img src="/2022/12/25/Servlet/image-20221225171039562.png" alt="image-20221225171039562"></p>
 </li>
 </ul>
+<h3 id="8-DispatcherServlet"><a href="#8-DispatcherServlet" class="headerlink" title="8.DispatcherServlet"></a>8.DispatcherServlet</h3><p>首先我们构建的代码结构如图</p>
+<p><img src="/2022/12/25/Servlet/image-20230101212049006.png" alt="image-20230101212049006"></p>
+<p>如果这样构建servlet的话，结构过于复杂，因此对其进行优化</p>
+<p><img src="/2022/12/25/Servlet/image-20230101212503070.png" alt="image-20230101212503070"></p>
+<p>如果这样构建servlet，如果还存在与FruitServlet并列的Servlet的话也会产生较为复杂的系统，因此采用一个中央处理器，即DispatcherServlet</p>
+<p><img src="/2022/12/25/Servlet/image-20230101212628721.png" alt="image-20230101212628721"></p>
 ]]></content>
       <categories>
         <category>Java</category>
