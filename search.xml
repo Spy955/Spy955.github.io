@@ -3,7 +3,17 @@
   <entry>
     <title>Lottery抽奖系统</title>
     <url>/2023/06/20/Lottery/</url>
-    <content><![CDATA[<h2 id="DAY01："><a href="#DAY01：" class="headerlink" title="DAY01："></a>DAY01：</h2><h3 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h3><p>按照小册子搭建环境即可。</p>
+    <content><![CDATA[<p><strong>项目目标：</strong></p>
+<ol>
+<li>运用模板、策略、工厂、状态等设计模式，定义抽奖过程标准和实现对应的多类型抽奖的服务模块。</li>
+<li>为了根据不同用户进行适配，根据组合模式构建决策树，开发规则引擎，通过量化，筛选用户身份标签，找到符合参与的活动号，完成自由组合的人群过滤服务，提升代码重用。</li>
+<li>面对活动秒杀的并发场景，将秒杀锁优化为 Redis Key 加锁，又从 Redis Key 的独占锁，优化为滑块锁。缩小锁粒度，提升并发性能。</li>
+<li>解耦抽奖流程，把抽奖和发奖用 MQ 消息串联起来，避免一个流程太长，导致用户一直等待。</li>
+<li>使用 db-router-starter 统一路由组件。实现根据字段对库表动态切换，完成对活动参与记录的分库分表。</li>
+</ol>
+<span id="more"></span>
+
+<h2 id="DAY01："><a href="#DAY01：" class="headerlink" title="DAY01："></a>DAY01：</h2><h3 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h3><p>按照小册子搭建环境即可。</p>
 <p><strong>注意</strong></p>
 <ul>
 <li><p>如果使用的数据库是8版本以上，还需要再对配置文件的进行修改</p>
