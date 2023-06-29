@@ -3,7 +3,15 @@
   <entry>
     <title>KMP 算法</title>
     <url>/2023/06/29/KMP/</url>
-    <content><![CDATA[<h2 id="KMP-算法简介"><a href="#KMP-算法简介" class="headerlink" title="KMP 算法简介"></a>KMP 算法简介</h2><p>KMP 算法主要用于字符串匹配上面，KMP的主要思想是<strong>当出现字符串不匹配时，可以知道一部分之前已经匹配的文本内容，可以利用这些信息避免从头再去做匹配了。</strong></p>
+    <content><![CDATA[<p><strong>学习目标：</strong></p>
+<ol>
+<li>掌握 KMP 算法思想</li>
+<li>掌握前缀表的定义与求取</li>
+<li>掌握力扣 KMP 相关题目</li>
+</ol>
+<span id="more"></span>
+
+<h2 id="KMP-算法简介"><a href="#KMP-算法简介" class="headerlink" title="KMP 算法简介"></a>KMP 算法简介</h2><p>KMP 算法主要用于字符串匹配上面，KMP的主要思想是<strong>当出现字符串不匹配时，可以知道一部分之前已经匹配的文本内容，可以利用这些信息避免从头再去做匹配了。</strong></p>
 <p>举个例子来说：</p>
 <p><img src="/2023/06/29/KMP/image-20230629094245752.png" alt="image-20230629094245752"></p>
 <p>当遍历文本串到 aabaab 的时候，发现 b 与模式串不匹配，此时如果采取暴力解法的话，采用的办法是从头再次进行遍历，时间复杂度为 O(m * n)，但是如果我此时可以做到继续与模式串的 b 开始匹配，那么只需要将文本串遍历一次即可，此时的时间复杂度为 O(n)，加上寻找模式串的前缀表，可以得知，时间复杂度为O(m +n)。</p>
