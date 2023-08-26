@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>深入学习 Java 原理之基础篇 - SPY 的博客</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="SPY 的博客"><meta name="msapplication-TileImage" content="/img/favicon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SPY 的博客"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="description" content="本篇内容：  学习 Java SE 相关理论基础以及底层实现 学习相关面试常见题目，掌握问答精髓 回顾当天所学知识，加深印象"><meta property="og:type" content="blog"><meta property="og:title" content="深入学习 Java 原理之基础篇"><meta property="og:url" content="https://spy955.github.io/2023/08/24/JavaSE/"><meta property="og:site_name" content="SPY 的博客"><meta property="og:description" content="本篇内容：  学习 Java SE 相关理论基础以及底层实现 学习相关面试常见题目，掌握问答精髓 回顾当天所学知识，加深印象"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="https://spy955.github.io/img/og_image.png"><meta property="article:published_time" content="2023-08-24T09:40:47.000Z"><meta property="article:modified_time" content="2023-08-24T14:02:36.930Z"><meta property="article:author" content="Sun Peiyuan"><meta property="article:tag" content="Interview preparation"><meta property="twitter:card" content="summary"><meta property="twitter:image:src" content="https://spy955.github.io/img/og_image.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://spy955.github.io/2023/08/24/JavaSE/"},"headline":"深入学习 Java 原理之基础篇","image":["https://spy955.github.io/img/og_image.png"],"datePublished":"2023-08-24T09:40:47.000Z","dateModified":"2023-08-24T14:02:36.930Z","author":{"@type":"Person","name":"Sun Peiyuan"},"publisher":{"@type":"Organization","name":"SPY 的博客","logo":{"@type":"ImageObject","url":"https://spy955.github.io/img/favicon.png"}},"description":"本篇内容：  学习 Java SE 相关理论基础以及底层实现 学习相关面试常见题目，掌握问答精髓 回顾当天所学知识，加深印象"}</script><link rel="canonical" href="https://spy955.github.io/2023/08/24/JavaSE/"><link rel="icon" href="/img/favicon.png"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0/css/all.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;600&amp;family=Source+Code+Pro"><link rel="stylesheet" href="/css/default.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><!--!--><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css"><!--!--><!--!--><style>.pace{-webkit-pointer-events:none;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.pace-inactive{display:none}.pace .pace-progress{background:#3273dc;position:fixed;z-index:2000;top:0;right:100%;width:100%;height:2px}</style><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><!--!--><!--!--><!-- hexo injector head_end start --><script>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>深入学习 Java 原理之基础篇 - SPY 的博客</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="SPY 的博客"><meta name="msapplication-TileImage" content="/img/favicon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SPY 的博客"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="description" content="本篇内容：  学习 Java SE 相关理论基础以及底层实现 学习相关面试常见题目，掌握问答精髓 回顾当天所学知识，加深印象"><meta property="og:type" content="blog"><meta property="og:title" content="深入学习 Java 原理之基础篇"><meta property="og:url" content="https://spy955.github.io/2023/08/24/JavaSE/"><meta property="og:site_name" content="SPY 的博客"><meta property="og:description" content="本篇内容：  学习 Java SE 相关理论基础以及底层实现 学习相关面试常见题目，掌握问答精髓 回顾当天所学知识，加深印象"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="https://spy955.github.io/img/og_image.png"><meta property="article:published_time" content="2023-08-24T09:40:47.000Z"><meta property="article:modified_time" content="2023-08-26T05:51:06.023Z"><meta property="article:author" content="Sun Peiyuan"><meta property="article:tag" content="Interview preparation"><meta property="twitter:card" content="summary"><meta property="twitter:image:src" content="https://spy955.github.io/img/og_image.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://spy955.github.io/2023/08/24/JavaSE/"},"headline":"深入学习 Java 原理之基础篇","image":["https://spy955.github.io/img/og_image.png"],"datePublished":"2023-08-24T09:40:47.000Z","dateModified":"2023-08-26T05:51:06.023Z","author":{"@type":"Person","name":"Sun Peiyuan"},"publisher":{"@type":"Organization","name":"SPY 的博客","logo":{"@type":"ImageObject","url":"https://spy955.github.io/img/favicon.png"}},"description":"本篇内容：  学习 Java SE 相关理论基础以及底层实现 学习相关面试常见题目，掌握问答精髓 回顾当天所学知识，加深印象"}</script><link rel="canonical" href="https://spy955.github.io/2023/08/24/JavaSE/"><link rel="icon" href="/img/favicon.png"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0/css/all.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;600&amp;family=Source+Code+Pro"><link rel="stylesheet" href="/css/default.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><!--!--><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css"><!--!--><!--!--><style>.pace{-webkit-pointer-events:none;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.pace-inactive{display:none}.pace .pace-progress{background:#3273dc;position:fixed;z-index:2000;top:0;right:100%;width:100%;height:2px}</style><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><!--!--><!--!--><!-- hexo injector head_end start --><script>
   (function () {
       function switchTab() {
           if (!location.hash) {
@@ -29,7 +29,7 @@
       switchTab();
       window.addEventListener('hashchange', switchTab, false);
   })();
-  </script><!-- hexo injector head_end end --><meta name="generator" content="Hexo 6.3.0"></head><body class="is-2-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/favicon.png" alt="SPY 的博客" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/Spy955"><i class="fab fa-github"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-8-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2023-08-24T09:40:47.000Z" title="2023/8/24 17:40:47">2023-08-24</time>发表</span><span class="level-item"><time dateTime="2023-08-24T14:02:36.930Z" title="2023/8/24 22:02:36">2023-08-24</time>更新</span><span class="level-item">24 分钟读完 (大约3594个字)</span></div></div><h1 class="title is-3 is-size-4-mobile">深入学习 Java 原理之基础篇</h1><div class="content"><p><strong>本篇内容：</strong></p>
+  </script><!-- hexo injector head_end end --><meta name="generator" content="Hexo 6.3.0"></head><body class="is-2-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/favicon.png" alt="SPY 的博客" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/Spy955"><i class="fab fa-github"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-8-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2023-08-24T09:40:47.000Z" title="2023/8/24 17:40:47">2023-08-24</time>发表</span><span class="level-item"><time dateTime="2023-08-26T05:51:06.023Z" title="2023/8/26 13:51:06">2023-08-26</time>更新</span><span class="level-item">1 小时读完 (大约13371个字)</span></div></div><h1 class="title is-3 is-size-4-mobile">深入学习 Java 原理之基础篇</h1><div class="content"><p><strong>本篇内容：</strong></p>
 <ol>
 <li>学习 Java SE 相关理论基础以及底层实现</li>
 <li>学习相关面试常见题目，掌握问答精髓</li>
@@ -178,7 +178,459 @@
 <li>编译期需要用 CONSTANT_Utf8_info 结构用于表示字符串常量的值，而这个结构是有长度限制，他的限制是65535。</li>
 <li>运行期，String 的 length 参数是 int 类型的，那么也就是说，String 定义的时候，最大支持的长度就是 int 的最大范围值。根据Integer类的定义，<code>java.lang.Integer#MAX VALUE</code> 的最大值是2^31 - 1;</li>
 </ol>
-</div><div class="article-licensing box"><div class="licensing-title"><p>深入学习 Java 原理之基础篇</p><p><a href="https://spy955.github.io/2023/08/24/JavaSE/">https://spy955.github.io/2023/08/24/JavaSE/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>Sun Peiyuan</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2023-08-24</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2023-08-24</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icons" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="icon fab fa-creative-commons"></i></a><a class="icons" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="icon fab fa-creative-commons-by"></i></a><a class="icons" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="icon fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/Interview-preparation/">Interview preparation</a></div><!--!--></article></div><div class="card"><div class="card-content"><h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3><div class="buttons is-centered"><a class="button donate" href="/" target="_blank" rel="noopener" data-type="afdian"><span class="icon is-small"><i class="fas fa-charging-station"></i></span><span>爱发电</span></a><a class="button donate" data-type="alipay"><span class="icon is-small"><i class="fab fa-alipay"></i></span><span>支付宝</span><span class="qrcode"><img src="/" alt="支付宝"></span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="buymeacoffee"><span class="icon is-small"><i class="fas fa-coffee"></i></span><span>送我杯咖啡</span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="patreon"><span class="icon is-small"><i class="fab fa-patreon"></i></span><span>Patreon</span></a></div></div></div><nav class="post-navigation mt-4 level is-mobile"><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2023/08/16/Data-Structure/"><span class="level-item">数据结构</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><div class="card"><div class="card-content"><h3 class="title is-5">评论</h3><div id="disqus_thread"><noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript></div><script>var disqus_config = function () {
+<blockquote>
+<p>RPC 接口返回类型使用基本数据类型还是包装类？</p>
+</blockquote>
+<p>RPC 接口返回类型应该是包装类型。如果使用基本数据类型，那么当接口出现问题的时候，返回的值具有二义性。举例来说，如果返回类型为float，那么接口出现异常的情况下，可能会返回默认值也就是 0.0，在这种情况下，无法确定是真的返回了 0.0，还是说出错返回了0.0。如果使用包装类型，那么在接口异常的情况下返回的是 null，可以明确知道接口是否出现异常。因此使用包装类型可以减少歧义。</p>
+<blockquote>
+<p>POJO 类型定义属性使用is+名称可以吗？</p>
+</blockquote>
+<p>POJO 类中的任何布尔类型的变量，都不要加 is，否则部分框架解析会引起序列化错误反例: 定义为基本数据类型 boolean isSuccess; 的属性，它的方法也是 isSuccess()，RPC框架在反向解析的时候，“以为” 对应的属性名称是 success，导致属性获取不到，进而抛出异常。</p>
+<blockquote>
+<p>介绍常见的字符编码？</p>
+</blockquote>
+<ol>
+<li>字符编码(Character encoding) 是一套法则，使用该法则能够对自然语言的字符的一个集合(如字母表或音)与其他东西的一个集合(如号码或电脉冲)进行配对。</li>
+<li>常见的字符编码有 Unicode、UTF-8、UTF-16、GBK 等。</li>
+<li>Unicode 是一套通用的字符集，包含了世界上大部分文字，但是并没有规定如何存储，因为如果规范存储的话，每个英文字母面前必有几个字节为0，对于存储来说是极大的浪费。UTF-8 是 Unicode 的一种实现，使用1-4字节进行存储。GBK 是解决中文在 UTF-8 中存储需要使用字节数较多造成的存储资源浪费而设计的，是中文字符编码。</li>
+</ol>
+<blockquote>
+<p>介绍几个常见的语法糖</p>
+</blockquote>
+<ol>
+<li>语法糖，指的是在计算机语言中添加的某种语法，这种语法对语言的功能并没有影响，但是更方便程序员使用。虽然Java中有很多语法糖，但是Java虚拟机并不支持这些语法糖，所以这些语法糖在编译阶段就会被还原成简单的基础语法结构，这样才能被虚拟机识别，这个过程就是解语法糖。Java虚拟机在编译过程中有一个重要的步骤就是调用desugar()，这个方法就是负责解语法糖的实现。</li>
+<li>常见的语法糖有 switch支持枚举及字符串、泛型、条件编译、断言、可变参数、自动装箱&#x2F;拆箱、枚举、内部类增强for循环、try-with-resources语句、lambda表达式等。 <ul>
+<li>switch支持枚举及字符串。指的是当 switch 的判断条件使用的是字符串时，在编译阶段就将字符串换成hashcode值进行实现</li>
+<li>泛型指的是所有泛型类的类型参数在编译的时候都会被擦除。（所以在重载的时候，泛型不同不代表参数列表不同；并且泛型类的所有静态变量时共享的）</li>
+<li>自动装箱与拆箱。即基本数据类型与包装类型的自动转换</li>
+<li>方法变长参数，指的是可变参数在使用的时候，会首先创建一个数组，数组的长度就是调用该方法传递的实参的个数，然后再把所有的参数值全部放到这个数组中，然后再把这个数组作为参数传递到被调用的方法中</li>
+<li>枚举，指的是当我们使用 enmu 来定义一个枚举类型的时候，编译器会自动帮我们创建一个 final 类型的类继承 Enum 类。所以枚举类型不能被继承</li>
+<li>内部类，内部类在编译之后会生成两个 .class 文件</li>
+<li>条件编译，指的是在进行条件判断的时候，编译器直接将分支为 false 的代码块消除。</li>
+<li>断言，断言底层就是 if 语句，如果断言结果为true，则什么都不做，程序继续执行，如果断言结果为false，则程序抛出AssertError来打断程序的执行</li>
+<li>数值字面量。指的是数字中间的下划线会被省略</li>
+<li>for-each，内部调用for循环和迭代器进行实现</li>
+<li>try-with-resources语句，编译器帮助我们完成资源关闭等操作</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>Lambda 表达式是如何实现的？</p>
+</blockquote>
+<p>lambda 表达式的实现实际上是依赖了底层部分 api，在编译阶段，编译器会将 lambda 表达式进行解糖，转换为对内部 api 的调用。</p>
+<blockquote>
+<p>什么是泛型？泛型有什么好处？</p>
+</blockquote>
+<p>泛型允许在定义接口或者类的时候，使用类型参数。声明的类型参数在真正具体调用或者实现的时候才会使用具体的类型来替换。这种方式主要有两个好处：</p>
+<ol>
+<li>提高代码的复用性。以 List 接口为例，使用泛型可以将 Integer 类型或者 String 类型放入 List 中，而不需要定义多个接口。</li>
+<li>安全性。在没有泛型的情况下，可能需要频繁进行类型转换，这不仅增加了代码复杂性，还容易引入错误。使用泛型可以减少这种类型转换，提高代码的安全性。</li>
+</ol>
+<blockquote>
+<p>泛型是如何实现的？</p>
+</blockquote>
+<p>泛型是通过类型擦除的方式实现的。即通过语法糖的形式，当Java文件从.java编译成为字节码文件的时候，将泛型擦除。例如List<String> 在编译之后成为 List。Java的泛型只在编译器，JVM是感应不到泛型的。</String></p>
+<blockquote>
+<p>类型擦除有什么缺点？</p>
+</blockquote>
+<ol>
+<li>泛型不可以重载</li>
+<li>泛型类中的静态变量只有一份</li>
+<li>泛型异常类不可以多次catch</li>
+</ol>
+<blockquote>
+<p>List、List&lt;?&gt;、List<Object>之间的区别</Object></p>
+</blockquote>
+<ol>
+<li>List<?> 是一个未知类型的List，而List<Object>是一个可以存放任何类型数据的List。可以把List<String>复制给List<?>，但是不能把List<String>赋值给List<Object>。</Object></String></String></Object></li>
+<li>可以把任何带参数的类型传递给原始类型List，但却不能把List<String>赋值给List<Object>，因为会产生编译错误 (不支持协变)</Object></String></li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">List&lt;?&gt; list1 = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;String&gt;();  <span class="comment">// 语法正确，通配符（Wildcard）类型</span></span><br><span class="line">List&lt;Object&gt; list2 = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;String&gt;();  <span class="comment">// 编译错误，不支持协变</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>对数组协变和泛型非协变的理解</p>
+</blockquote>
+<p>协变，可以理解为由于String是Object的子类，那么同样的String[]也是Object[]的子类。这种情况称之为数组协变。对于泛型来说，List<String>和List<Object>一点关系都没有。</Object></String></p>
+<p>对于泛型非协变，可以举下面这个例子：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">List&lt;Object&gt; list = <span class="keyword">new</span> <span class="title class_">List</span>&lt;String&gt;;</span><br><span class="line">list.add(<span class="number">1</span>);		   <span class="comment">//如果允许协变，则可以添加</span></span><br><span class="line"><span class="type">String</span> <span class="variable">s</span> <span class="operator">=</span> list.get(<span class="number">0</span>);<span class="comment">// 编译报错</span></span><br></pre></td></tr></table></figure>
+
+<p>追问：为什么泛型不允许协变，而数组允许协变呢? 原因有二:</p>
+<ol>
+<li>因为数组设计之初没有泛型，为了兼容考虑,如 Arrays.equals(object[]，object[]) 方法，是时代无奈的产物</li>
+<li>数组也属于对象，它记录了引用实际的类型，在放入数组的时候，如果类型不一样就会报错，而不是等到拿出</li>
+</ol>
+<blockquote>
+<p>泛型中上下定界符extends和super有什么作用？</p>
+</blockquote>
+<ol>
+<li><? extends T>表示类型的上界，表示参数化类型的可能是 T 或是 T的子类；<? super T>表示类型下界，表示参数化类型是此类型的父类型，直全Object。</li>
+<li>在使用限定通配符的时候，需要遵守PECS原则，即Producer Extends, Consumer Super; 上界生产，下界消费<ol>
+<li>如果要从集合中读取类型T的数据，并且不能写入，可以使用 ? extends 通配符，如果要从集合中写入类型T的数据，并且不需要读取，可以使用 ? super 通配符</li>
+<li>如果既要存又要取，那么就不要使用任何通配符.</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<p>SPI 和 API 有什么区别？</p>
+</blockquote>
+<ol>
+<li>API 直接被应用开发人员使用，SPI 被框架扩展人员使用。</li>
+<li>API 是一组定义了软件之间交互规则和约定的接口。提供方用来制定接口并且完成对接口的不同实现，调用方只需要调用即可。</li>
+<li>SPI 是一种扩展机制，通常用于在应用程序中提供可插拔的实现。调用方可以选择使用提供方提供的内置来实现，也可以自己实现。</li>
+<li>总而言之，API 用于定义调用接口，SPI 用于定义和提供可插拔的实现方式。</li>
+</ol>
+<blockquote>
+<p>如何定义一个SPI？</p>
+</blockquote>
+<blockquote>
+<p>SPI 的实现原理？</p>
+</blockquote>
+<blockquote>
+<p>SPI 的应用场景</p>
+</blockquote>
+<p>概括地说，适用于:调用者根据实际使用需要，启用、扩展、或者替换框架的实现策略。比较常见的例子有</p>
+<ol>
+<li>数据库驱动加载接口实现类的加载</li>
+<li>JDBC加载不同类型数据库的驱动</li>
+<li>日志门面接口实现类加载</li>
+<li>SLF4J加载不同提供商的日志实现类</li>
+<li>Spring中大量使用了SPI，比如: 对servlet3.0规范对ServletContainerlnitializer的实现、自动类型转换TypeConversion SPI(Converter SPl、 Formatter SPI)</li>
+<li>Dubbo中也大量使用SPI的方式实现框架的扩展,不过它对Java提供的原生SPI做了封装，允许用户扩展实现Filter接口</li>
+</ol>
+<blockquote>
+<p>什么是反射机制？</p>
+</blockquote>
+<p>反射机制指的是程序在运行过程中能够获得自身的信息，即在Java中，只要给定类的名字，就能通过反射获取类的所有属性和方法。Java的反射可以：</p>
+<ol>
+<li>在运行时判断任意一个对象所属的类</li>
+<li>在运行时判断任意一个类所具有的成员变量和方法</li>
+<li>在运行时任意调用一个对象的方法</li>
+<li>在运行时构造任意一个类的对象</li>
+</ol>
+<blockquote>
+<p>反射的优点和缺点</p>
+</blockquote>
+<ol>
+<li>反射的好处就是可以提升程序的灵活性和扩展性，比较容易在运行期干很多事情。</li>
+<li>缺点主要有三个：<ul>
+<li>代码可读性低及可维护性</li>
+<li>反射代码执行的性能低</li>
+<li>反射破坏了封装性</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>为什么说反射机制比较慢？</p>
+</blockquote>
+<ol>
+<li>由于反射涉及动态解析的类型，因此不能执行某些Java虚拟机优化，如JIT优化。</li>
+<li>在使用反射时，参数需要包装成Object 类型，但是真正方法执行的时候，又需要再拆包成真正的类型，这些动作不仅消耗时间，而且过程中也会产生很多对象，对象一多就容易导致GC也会导致应用变慢。</li>
+<li>反射调用方法时会从方法数组中遍历查找，并且会检查可见性。这些动作都是耗时的.</li>
+<li>不仅方法的可见性要做检查，参数也需要做很多额外的检查.</li>
+</ol>
+<blockquote>
+<p>反射常用的场景有哪些？</p>
+</blockquote>
+<ol>
+<li>动态代理</li>
+<li>JDBC的class.forName</li>
+<li>BeanUtils中属性值的拷贝</li>
+<li>RPC框架</li>
+<li>ORM框架</li>
+<li>Spring的IOC&#x2F;DI</li>
+</ol>
+<blockquote>
+<p>JAVA中创建对象的方式有哪些？</p>
+</blockquote>
+<ol>
+<li>使用 new 关键字</li>
+<li>使用反射机制<ol>
+<li>使用Class类的newInstance()方法</li>
+<li>使用Constructor类的newInstance()方法</li>
+</ol>
+</li>
+<li>使用clone方法</li>
+<li>使用反序列化。当序列化或者反序列化一个对象的时候，JVM 会给我们创建一个单独的对象，其实反序列化也是基于反射实现的</li>
+<li>使用方法句柄</li>
+<li>使用Unsafe分配内存</li>
+</ol>
+<blockquote>
+<p>Java的动态代理如何实现？</p>
+</blockquote>
+<p>在Java中，实现动态代理有两种方式:</p>
+<ol>
+<li>JDK动态代理: Java.lang.reflect 包中的Proxy类和InvocationHandler接口提供了生成动态代理类的能力。</li>
+<li>Cglib动态代理: Cglib (Code Generation Library )是一个第三方代码生成类库，运行时在内存中动态生成个子类对象从而实现对目标对象功能的扩展。</li>
+</ol>
+<blockquote>
+<p>两种动态代理方式有什么区别？</p>
+</blockquote>
+<ol>
+<li>JDK的动态代理有一个限制，就是使用动态代理的对象必须实现一个或多个接口。如果想代理没有实现接口的类就可以使用CGLIB实现。</li>
+<li>Cglib是一个强大的高性能的代码生成包，它可以在运行期扩展Java类与实现Java接口。它广泛的被许多AOP的框架使用，例如Spring AOP和dynaop，为他们提供方法的interception (拦截)</li>
+<li>Cglib包的底层是通过使用一个小而快的字节码处理框架ASM，来转换字节码并生成新的类。不鼓励直接使用ASM，因为它需要你对JVM内部结构包括class文件的格式和指令集都很熟悉。</li>
+<li>所以，使用JDK动态代理的对象必须实现一个或多个接口;而使用cglib代理的对象则无需实现接口，达到代理类无侵入。</li>
+</ol>
+<blockquote>
+<p>静态代理和动态代理的区别？</p>
+</blockquote>
+<p>最大的区别是静态代理是编译期确定的，动态代理是运行期确定的。</p>
+<p>使用静态代理需要手写许多代码，这个过程浪费时间和精力，一旦需要代理的类中方法比较多，或者需要同时代理多个对象的时候，复杂度较大</p>
+<p>反射是动态代理的实现方式之一</p>
+<blockquote>
+<p>动态代理的用途？</p>
+</blockquote>
+<p>Java的动态代理的最主要的用途就是应用在各种框架中。因为使用动态代理可以很方便的运行期生成代理类，通过代理类可以做很多事情，比如AOP，比如过滤器、拦截器等。</p>
+<p>在我们平时使用的框架中，像servlet的filter、包括spring提供的aop以及struts2的拦截器都使用了动态代理功能。我们日常看到的mybatis分页插件，以及日志拦截、事务拦截、权限拦截这些几乎全部由动态代理的身影。</p>
+<blockquote>
+<p>Spring AOP的实现方式</p>
+</blockquote>
+<p>Spring AOP中的动态代理主要有两种方式，JDK动态代理和CGLIB动态代理</p>
+<ol>
+<li>JDK动态代理通过反射来接收被代理的类，并且要求被代理的类必须实现一个接口。JDK动态代理的核心是InvocationHandler接口和Proxy类。如果目标类没有实现接口，那么Spring AOP会选择使用CGLIB来动态代理目标类</li>
+<li>CGLIB (Code Generation Library) ，是一个代码生成的类库，可以在运行时动态的生成某个类的子类，注意CGLIB是通过继承的方式做的动态代理，因此如果某个类被标记为final，那么它是无法使用CGLIB做动态代理的</li>
+</ol>
+<blockquote>
+<p>Java 注解的作用是什么？</p>
+</blockquote>
+<p>Java 注解用于为Java源代码提供元数据。作为元数据，注解不直接影响代码的执行，而是提供了关于代码的附加信息，以便编译器、工具、框架能够在不影响原始代码结构的情况下进行处理。其作用主要有以下几个：</p>
+<ol>
+<li>提供元数据信息：注解可以在代码中添加关于类、方法、字段等元素的附加信息。这些信息可以描述类的用途、方法的用途、字段的含义等。</li>
+<li>编译时检查：注解可以用于在编译的时候进行静态检查。例如，Java中内置的<code>@Override</code>注解可以保证在重写父类的方法时没有拼写错误或者参数错误。</li>
+<li>代码生成：某些框架和工具可以根据注解生成额外的代码。</li>
+<li>配置和定制：注解可以用于配置框架、库或其他组建的行为，例如Spring框架中的注解可以用来只是哪些类可以被Spring容器管理</li>
+<li>文档生成：注解可以用于生成文档，以便开发人员了解代码的用途和约束。</li>
+<li>运行时处理：通过Java的反射机制，可以在运行时检查类、方法或者字段上的注解，并且根据注解的信息执行不同的逻辑。</li>
+</ol>
+<blockquote>
+<p>元注解是什么？都有哪些？</p>
+</blockquote>
+<ol>
+<li>元注解就是定义其他注解的注解</li>
+<li>元注解主要有四个，分别是：<ol>
+<li>@Target：表示被修饰的注解可以用于哪些类型，方法、类还是字段</li>
+<li>@Retention：表示被修饰的注解的生命周期，即注解在源代码、编译时还是运行时保留。（SOURCE CLASS RUNTIME）默认为编译</li>
+<li>@Documented：表示被修饰的注解文本信息是否保存到javadoc中</li>
+<li>@Inherited：表示被修饰的注解是否允许被继承，默认不允许</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<p>如何判断是否有注解？</p>
+</blockquote>
+<p>使用反射来获取字段、类、方法上是否有注解并且注解的值为多少。使用的方法时 getAnnotation。</p>
+<blockquote>
+<p>Java中的序列化是什么？</p>
+</blockquote>
+<p>序列化是将对象转换为可传输格式的过程。是一种数据的持久化手段。一般广泛应用于网络传输，RMI和RPC等场景中。</p>
+<p>补充RMI和RPC的区别：二者都是为了实现分布式系统中远程调用的技术。RMI 适用于 Java 环境中实现远程方法调用，而 RPC 技术更为通用，可以用于不同语言和环境之间的分布式通信。</p>
+<blockquote>
+<p>序列化的原理是什么？</p>
+</blockquote>
+<ul>
+<li><p>在Java的序列化机制中，如果是String，枚举或者实现了Serializable接口的类，均可以通过Java的序列化机制，将类序列化为符合编码的数据流，然后通过InputStream和OutputStream将内存中的类持久化到硬盘或者网络中；同时，也可以通过反序列化机制将磁盘中的字节码再转换成内存中的类。</p>
+</li>
+<li><p>如果一个类想被序列化，需要实现Serializable接口。否则将抛出NotSerializableException异常。Serializable接门没有方法或字段，仅用于标识可序列化的语义。<br>自定义类通过实现Serializable接口做标识，进而在 IO 中实现序列化和反序列化，具体的执行路径如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">#writeObject -&gt;#writeObjectO(判断类是否是自定义类) -&gt; #writeOrdinaryObject(区分Serializable和Externalizable) -&gt; writeSerialData(序列化fields) -&gt; invokewriteObject(反射调用类自己的序列化策略)</span><br></pre></td></tr></table></figure>
+
+<p>其中，在invokeWriteObject的阶段，系统就会处理自定义类的序列化方案。这是因为，在序列化操作过程中会对类型进行检查，要求被序列化的类必须属于Enum、Array和Serializable类型其中的任何一种。</p>
+</li>
+</ul>
+<blockquote>
+<p>Serializable 和 Externalizable 有啥区别？</p>
+</blockquote>
+<ol>
+<li>类通过实现 java.io.Serializable 接口以启用其序列化功能。未实现此接口的类将无法使其任何状态序列化或反序列化。可序列化类的所有子类型本身都是可序列化的。序列化接口没有方法或字段，仅用于标识可序列化的语义。当试图对一个对象进行序列化的时候，如果遇到不支持 Serializable 接口的对象。在此情况下，将抛出 NotSerializableException。如果要序列化的类有父类，要想同时将在父类中定义过的变量持久化下来，那么父类也应该实现java.io.Serializable接口。</li>
+<li>Externalizable继承了Serializable，该接口中定义了两个抽象方法: writeExternal()与readExternal()。当使用Externalizable接口来进行席列化与反序列化的时候需要开发人员重写writeExternal()与readExternal()方法。如果没有在这两个方法中定义序列化实现细节，那么序列化之后，对象内容为空。实现Externalizable接口的类必须要提供一个public的无参的构造器。</li>
+<li>所以，实现Externalizable，并实现writeExternal()和readExternal()方法可以指定序列化哪些属性</li>
+</ol>
+<blockquote>
+<p>serialVersionUID 有什么作用？</p>
+</blockquote>
+<ol>
+<li>序列化指的是将对象的状态信息转换为可存储或者传输的形式，在JVM中，Java对象保存在JVM的堆内存中，因此如果JVM不存在，则表示对象随之消失。而序列化提供了一种方案，可以在JVM停机的情况下也把对象保存下来的方案。该方法通过将对象序列化成为可存储或者传输的形式（如二进制），比如保存在文件中，那么下次需要这个对象的时候，再从文件中读取出二进制流，再从二进制流中反序列化出对象。</li>
+<li>虚拟机是否允许反序列化，不但取决于类路径和功能代码是否一致，最重要的是两个类的序列化ID是否相同，也就是 serialVersionUID 的值是否一致。在进行反序列化的时候，JVM会将传来的字节流的serialVersionUID 与本地相应实体类的serialVersionUID 进行比较，如果一致则进行反序列化，否则会出现序列化版本不一致的情况，也就是InvalidCastException，这样可以保证安全，因为文件存储的内容可能被篡改。（举个例子，你在本地使用序列号为1的Person序列化的对象，那么当你读取接收的时候也需要用这个实体类）。</li>
+<li>当实现java.io.Serializable接口的类没有显式地定义一个serialVersionUID变量时候，Java序列化机制会根据编译的Class自动生成一个serialVersionUID作序列化版本比较用，这种情况下，如果Class文件没有发生变化，就算编译多次，serialVersionUID也不会变化的。但是，如果发生了变化，那么这个文件对应的serialVersionUID也就会发生变化。</li>
+<li>基于以上原理，如果我们一个类实现了Serializable接口，但是没有定义serialVersionUID，然后序列化。在序列化之后，由于某些原因，我们对该类做了变更，重新启动应用后，我们相对之前序列化过的对象进行反序列化的话就会报错。</li>
+</ol>
+<blockquote>
+<p>fastjson 反序列化有什么漏洞？</p>
+</blockquote>
+<ol>
+<li>首先当fastjson进行序列化的时候，当类中包含一个接口或者抽象类的时候，会将子类型抹去，只保留接口或者抽象类，这样会使得在反序列化的时候无法拿到原始类型。（举个例子，假设Apple类实现Fruit接口，那么在反序列化的时候，只能知道类型时Fruit而无法判断是Apple）</li>
+<li>为了解决这个问题，fastjson引入了AutoType这个功能，也就是将JSON字符串反序列化的时候，自动读取@type的值，试图将JSON内容反序列化成为这个对象，并且会调用这个类的setter方法</li>
+<li>那么这个特性就可能被利用，攻击者自己构造一个JSON字符串，并且使用 @type 指定一个自己想要使用的攻击类库实现攻击。</li>
+</ol>
+<blockquote>
+<p>Java中异常分为哪两类？</p>
+</blockquote>
+<p>Java中的异常，主要可以分为两大类，即受检异常 (checked exception) 和非受检异常 (uncheckedexception)</p>
+<ol>
+<li><p>对于受检异常来说，如果一个方法在声明的过程中证明了其要有受检异常抛出:public void test() throws Exception{}。那么，当我们在程序中调用他的时候，一定要对该异常进行处理(捕获或者向上抛出)，否则是无法编译通过的。这是一种强制规范。</p>
+<p>这种异常在IO操作中比较多。比如FileNotfFoundException ，当我们使用IO流处理文件的时候，有一种特殊情况，就是文件不存在。所以，在文件处理的接口定义时他会显示抛出FileNotFoundException，其目的就是告知方法的调用者，这个方法不保证一定可以成功，是有可能找不到对应的文件的，你要明确的对这种情况做特殊处理。</p>
+<p><strong>所以说，当我们希望我们的方法调用者，明确的处理一些特殊情况的时候，就应该使用受检异常.</strong></p>
+</li>
+<li><p>对于非受检异常来说，一般是运行时异常，继承自RuntimeException。在编写代码的时候，不需要显示的捕获但是如果不捕获，在运行期如果发生异常就会中断程序的执行。这种异常一般可以理解为是代码原因导致的。比如发生空指针、数组越界等。所以，只要代码写的没问题，这些异常都是可以避免的。也就不需要我们显示的进行处理。</p>
+</li>
+</ol>
+<blockquote>
+<p>什么是Throwable？</p>
+</blockquote>
+<p>Throwable是java中最顶级的异常类，继承Object，实现了序列化接口，有两个重要的子类: Exception和Error，二者都是 Java 异常处理的重要子类，各自都包含大量了类。</p>
+<blockquote>
+<p>Error和Exception的区别和联系</p>
+</blockquote>
+<ol>
+<li>error表示系统级的错误，是java运行环境内部错误或者硬件问题，不能指望程序来处理这样的问题，除了退出运行外别无选择，它是Java虚拟机抛出的。如OutOfMemoryError、StackOverflowErrorD这两种常见的错误都是ERROR。</li>
+<li>exception 表示程序需要捕捉、需要处理的异常，是由与程序设计的不完善而出现的问题，程序必须处理的问题.分为RuntimeException和其他异常。</li>
+</ol>
+<blockquote>
+<p>请列举几个常用的RuntimeException。</p>
+</blockquote>
+<p><strong>AnnotationTypeMismatchException</strong>, <strong>ArithmeticException</strong>, ArrayStoreException,BufferOverflowException, BufferUnderflowException, CannotRedoException, CannotUndoException，<strong>ClassCastException</strong>, CMMException, ConcurrentModificationException, DataBindingException,DOMException, EmptyStackException, EnumConstantNotPresentException, EventException,FileSystemAlreadyExistsException, FileSystemNotFoundException, <strong>llegalArgumentException</strong>,llegalMonitorStateException, llegalPathStateException, llegalStateException, llformedLocaleException.magingOpException, ncompleteAnnotationException, <strong>IndexOutOfBoundsException</strong>.MRuntimeException, LSException, MalformedParameterizedTypeException, MirroredTypesExceptionMissingResourceException, NegativeArraySizeException, <strong>NoSuchElementException</strong>，NoSuchMechanismException, NullPointerException, ProfileDataException, ProviderException，ProviderNotFoundException, RasterFormatException, RejectedExecutionException, SecurityException，SystemException, TypeConstraintException, TypeNotPresentException, UndeclaredThrowableExceptionJnknownEntityException, UnmodifiableSetException, UnsupportedOperationExceptionWebServiceException, WrongMethodTypeException</p>
+<blockquote>
+<p>说一下Java中异常处理的几个关键字及用途</p>
+</blockquote>
+<p>常见关键字有 throw、throws、try、catch、finally</p>
+<ol>
+<li>throw 用于明确的抛出一个异常</li>
+<li>throws 用于向上抛出异常，通常是抛出所有可能的异常</li>
+<li>try 是用来指定一块预防所有异常的程序</li>
+<li>catch 使用在try 后面，用来指定想要捕获的异常的类型</li>
+<li>finally 用于确保一段代码不管发生什么异常都会被执行</li>
+</ol>
+<blockquote>
+<p>如何自定义异常？</p>
+</blockquote>
+<ol>
+<li>自定义异常就是开发人员自己定义的异常，一般通过继承Exception的子类的方式实现。</li>
+<li>编写自定义异常类实际上是继承一个API标准异常类，用新定义的异常处理信息覆盖原有信息的过程</li>
+<li>这种用法在Web开发中也比较常见，一般可以用来自定义业务异常。如余额不足、重复提交等。这种自定义异常有业务含义，更容易让上层理解和处理。</li>
+</ol>
+<blockquote>
+<p>两种异常处理类型如何选用？</p>
+</blockquote>
+<p>两种异常处理类型指的是向上抛出throws和捕获并且处理异常try-catch</p>
+<p>对于两种类型的选用遵循以下原则：如果知道如何处理就使用捕获并且处理异常try-catch方法；如果不知道如何进行处理则向上抛出</p>
+<blockquote>
+<p>finally 中的代码一定会被执行吗？</p>
+</blockquote>
+<ol>
+<li><p>通常情况下，finally的代码一定会被执行，但是这是有一个前提的，: 1、对应 try 语句块被执行，2、程序正常运行。</p>
+</li>
+<li><p>如果没有符合这两个条件的话，finally中的代码就无法被执行，如发生以下情况，都会导致finally不会执行</p>
+<ul>
+<li><p>System.exit() 方法被执行</p>
+</li>
+<li><p>Runtime.getRuntime().halt()方法被执行</p>
+</li>
+<li><p>try或者catch中有死循环</p>
+</li>
+<li><p>操作系统强制杀掉了JVM进程，如执行了kill -9</p>
+</li>
+<li><p>其他原因导致的虚拟机崩溃了</p>
+</li>
+<li><p>虚拟机所运行的环境挂了，如计算机电源断了</p>
+</li>
+<li><p>如果一个finally是由守护线程执行的，那么是不保证一定能执行的，如果这时候JVM要退出，JVM会检查其他非守护线程，如果都执行完了，那么就直接退出了。这时候finally可能就没办法执行完。</p>
+</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>Java中枚举类有什么好处？</p>
+</blockquote>
+<p>枚举类型是指由一组固定的常量组成合法的类型。Java中由关键字enum来定义一个枚举类型</p>
+<p>其好处有：</p>
+<ol>
+<li>枚举的 valueof 可以自动对入参进行非法参数的校验（枚举的 <code>valueOf</code> 方法可以自动对输入参数进行校验，确保传入的值是有效的枚举常量。如果传入一个不存在的枚举常量名，会抛出 <code>IllegalArgumentException</code>。）</li>
+<li>可以调用枚举中的方法，相对于普通的常量来说操作性更强。（枚举不仅仅是一组常量，它们可以具有方法，从而可以为每个枚举常量提供特定的行为，这使得操作枚举常量更加灵活和有用。）</li>
+<li>枚举实现接口的话，可以很容易的实现策略模式。（枚举类可以实现接口，这意味着你可以根据不同的枚举常量选择不同的实现，实现了策略模式的思想。这在某些情况下能够更方便地管理和切换不同的行为。）</li>
+<li>枚举可以自带属性，扩展性更强。（枚举类可以像普通类一样拥有字段和方法。这使得你可以将额外的信息与每个枚举常量关联起来，使枚举更具表现力和扩展性。）</li>
+</ol>
+<blockquote>
+<p>枚举类使用哪种比较方式？</p>
+</blockquote>
+<p>枚举类equals底层也是使用&#x3D;&#x3D;进行比较，所以二者均可以</p>
+<blockquote>
+<p>简述 BIO、NIO、AIO 的特性以及应用场景</p>
+</blockquote>
+<ol>
+<li>BIO 指的是同步阻塞 I&#x2F;O，线程发起 IO 请求之后，一直阻塞，直到缓冲区数据就绪之后，才进入下一步操作</li>
+<li>NIO 指的是同步非阻塞 I&#x2F;O，线程发起 IO 请求之后，线程不需要阻塞，立即返回，用户线程不需要原地等待 IO 缓冲区，可以先做一些其他操作，只需要定时轮询 IO 缓冲区数据是否就绪即可。</li>
+<li>AIO 指的是异步非阻塞 I&#x2F;O，线程发起 IO 请求之后，不需要阻塞，立即返回，也不需要定时轮询检查结果，异步 IO 操作之后会立即回调通知调用方。</li>
+</ol>
+<p><strong>应用场景：</strong></p>
+<ol>
+<li>BIO方式话用于连接数目比较小目固定的架构，这种方式对服务器资源要求比较高，并发局限于应用中，JDK1.4以前的唯一选择，但程序直观简单易理解</li>
+<li>NIO方式适用于连接数目多且连接比较短（轻操作)的架构，比如聊天服务器，并发局限于应用中，编程比较复杂，JDK1.4开始支持。</li>
+<li>AIO方式适用于连接数目多且连接比较长(重操作)的架构，比如相册服务器，充分调用OS参与并发操作，编程比较复杂，JDK7开始支持。</li>
+</ol>
+<blockquote>
+<p>Java是值传递还是引用传递？</p>
+</blockquote>
+<ol>
+<li>在程序设计中，求值策略有很多种，比较常见的就是值传递和引用传递。还有一种值传递的特例一一共享对象传递。</li>
+<li>值传递和引用传递最大的区别是传递的过程中有没有复制出一个副本来，如果是传递副本，那就是值传递，否则就是引用传递。</li>
+<li>在Java中，其实是通过值传递实现的参数传递，只不过对于Java对象的传递，传递的内容是对象的引用。所以可以说，Java中的求值策略是共享对象传递。</li>
+</ol>
+<blockquote>
+<p>什么是深拷贝和浅拷贝？</p>
+</blockquote>
+<ol>
+<li>浅拷贝指的是将一个对象复制到另一个变量中的时候，只复制对象的地址，而不是对象本身。也就是说，原始对象和复制对象实际上是共享同一个内存地址的。这种拷贝方式，修改其中一个对象的属性或者元素，另一个对象的属性和元素也会随着变化。</li>
+<li>深拷贝是指将一个对象及其所有的子对象都复制到另一个变量中，也就是说，他会创建一个全新的对象，并且将原始对象中的所有属性或元素都复制到新的对象中。因此在这种拷贝方式下，修改其中一个对象的属性或者元素的时候，另一个对象的属性或元素不改变。</li>
+</ol>
+<blockquote>
+<p>实现深拷贝有哪些方式？</p>
+</blockquote>
+<ol>
+<li>实现 Clonable 方法，重写 clone() 方法。如果不重写 clone 方法，则依旧是浅拷贝。</li>
+<li>序列化实现深拷贝。可以借助序列化来实现深拷贝。先把对象序列化成流，再从流中反序列化成对象，这样就一定是新的对象了序列化的方式有很多，比如我们可以使用各种JSON工具，把对象序列化成JSON字符串，然后再从字符串中反序列化成对象。</li>
+</ol>
+<blockquote>
+<p>SimpleDateFormat 是线程安全的吗？ </p>
+</blockquote>
+<ol>
+<li>SimpleDateFormat是非线程安全的，所以在多线程场景中，不能使用SimpleDateFormat作为共享变量。</li>
+<li>因为SimpleDateFormat中的format方法在执行过程中，会使用一个成员变量calendar来保存时间。如果我们在声明SimpleDateFormat的时候，使用的是static定义的。那么这个SimpleDateFormat就是一个共享变量，随之，simpleDateFormat中的calendar也就可以被多个线程访问到。</li>
+</ol>
+<blockquote>
+<p>如何解决其线程不安全的问题？</p>
+</blockquote>
+<ol>
+<li>使用局部变量。将SimpleDateFormat 设置为局部变量，可以避免其被多个线程访问。</li>
+<li>添加同步锁</li>
+<li>使用ThreadLocal对每一个线程都创建一个SimpleDateFormat。</li>
+<li>使用 DateTimeFormatter</li>
+</ol>
+<blockquote>
+<p>UUID 一定是唯一的吗？</p>
+</blockquote>
+<p>UUID 全称全局唯一标识符，是指在一台机器上生成的数字，它的目标是保证对在同时空中的所有机器都是唯一的。<br>UUID 的生成是基于一定算法，通常使用的是随机数生成器或者基于时间戳的方式，生成的 UUID 由 32 位 16 进制数表示，共有 128位(标准的UUID格式为: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx(8-4-4-4-12)，共32字符)。由于 UUID 是由 MAC 地址、时间戳、随机数等信息生成的，因此 UUID 具有极高的唯一性，可以说是几乎不可能重复，但是在实际实现过程中，UUID有多种实现版本，他们的唯一性指标也不尽相同。</p>
+<blockquote>
+<p>UUID 有哪些优缺点？</p>
+</blockquote>
+<ol>
+<li>UUID 的优点就是他的性能比较高，不依赖网络，本地就可以生成，使用起来也比较简单。</li>
+<li>UUID 的缺点是长度过长和没有任何含义。</li>
+</ol>
+<blockquote>
+<p>char可以存储中文吗？</p>
+</blockquote>
+<p>在Java中，char类型是用来表示一个16位的Unicode字符，它可以存诸任何Unicode字符集中的字符，当然也包括中文字符。</p>
+<blockquote>
+<p>while(true) 和 for(;;) 哪个性能更好？</p>
+</blockquote>
+<p>一样的，二者编译之后都是使用goto来实现的，实现方法一样，性能相同。</p>
+<blockquote>
+<p>ClassNotFoundException和NoClassDefFoundError的区别是什么</p>
+</blockquote>
+<ol>
+<li>ClassNotFoundException是一个受检异常 (checked exception)。他通常在运行时，在类加载阶段尝试加载类的过程中，找不到类的定义时触发。通常是由Class.forName或类加载器loadClass或者findSystemClass时在类路径中没有找到指定名称的类时，会抛出该异常。表示所需的类在类路径中不存在。这通常是由于类名拼写错误或缺少依赖导致的。</li>
+<li>NoClassDefFoundError是一个错误 (error) ，它表示运行时尝试加载一个类的定义时，虽然找到了类文件，但是在加载、解析或链接类的过程中发生了问题。这通常是由于依赖问题或类定义文件 (.class文件)损坏导致的。也就是说这个类在编译时存在，运行时丢失了，就会导致这个异常。</li>
+</ol>
+</div><div class="article-licensing box"><div class="licensing-title"><p>深入学习 Java 原理之基础篇</p><p><a href="https://spy955.github.io/2023/08/24/JavaSE/">https://spy955.github.io/2023/08/24/JavaSE/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>Sun Peiyuan</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2023-08-24</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2023-08-26</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icons" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="icon fab fa-creative-commons"></i></a><a class="icons" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="icon fab fa-creative-commons-by"></i></a><a class="icons" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="icon fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/Interview-preparation/">Interview preparation</a></div><!--!--></article></div><div class="card"><div class="card-content"><h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3><div class="buttons is-centered"><a class="button donate" href="/" target="_blank" rel="noopener" data-type="afdian"><span class="icon is-small"><i class="fas fa-charging-station"></i></span><span>爱发电</span></a><a class="button donate" data-type="alipay"><span class="icon is-small"><i class="fab fa-alipay"></i></span><span>支付宝</span><span class="qrcode"><img src="/" alt="支付宝"></span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="buymeacoffee"><span class="icon is-small"><i class="fas fa-coffee"></i></span><span>送我杯咖啡</span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="patreon"><span class="icon is-small"><i class="fab fa-patreon"></i></span><span>Patreon</span></a></div></div></div><nav class="post-navigation mt-4 level is-mobile"><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2023/08/16/Data-Structure/"><span class="level-item">数据结构</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><div class="card"><div class="card-content"><h3 class="title is-5">评论</h3><div id="disqus_thread"><noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript></div><script>var disqus_config = function () {
             this.page.url = 'https://spy955.github.io/2023/08/24/JavaSE/';
             this.page.identifier = '2023/08/24/JavaSE/';
         };
