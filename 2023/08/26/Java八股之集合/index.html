@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>深入 Java 原理之集合篇 - SPY 的博客</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="SPY 的博客"><meta name="msapplication-TileImage" content="/img/favicon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SPY 的博客"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="description" content="本篇内容：  学习 Java 集合相关理论基础以及底层实现 学习相关面试常见题目，掌握问答精髓 回顾当天所学知识，加深印象"><meta property="og:type" content="blog"><meta property="og:title" content="深入 Java 原理之集合篇"><meta property="og:url" content="https://spy955.github.io/2023/08/26/Java%E5%85%AB%E8%82%A1%E4%B9%8B%E9%9B%86%E5%90%88/"><meta property="og:site_name" content="SPY 的博客"><meta property="og:description" content="本篇内容：  学习 Java 集合相关理论基础以及底层实现 学习相关面试常见题目，掌握问答精髓 回顾当天所学知识，加深印象"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="https://spy955.github.io/2023/08/26/Java%E5%85%AB%E8%82%A1%E4%B9%8B%E9%9B%86%E5%90%88/Users/spy/AppData/Roaming/Typora/typora-user-images/image-20230827173602465.png"><meta property="article:published_time" content="2023-08-26T08:28:56.000Z"><meta property="article:modified_time" content="2023-08-27T09:50:09.536Z"><meta property="article:author" content="Sun Peiyuan"><meta property="article:tag" content="Interview preparation"><meta property="twitter:card" content="summary"><meta property="twitter:image:src" content="https://spy955.github.io/2023/08/26/Java%E5%85%AB%E8%82%A1%E4%B9%8B%E9%9B%86%E5%90%88/Users/spy/AppData/Roaming/Typora/typora-user-images/image-20230827173602465.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://spy955.github.io/2023/08/26/Java%E5%85%AB%E8%82%A1%E4%B9%8B%E9%9B%86%E5%90%88/"},"headline":"深入 Java 原理之集合篇","image":["https://spy955.github.io/2023/08/26/Java%E5%85%AB%E8%82%A1%E4%B9%8B%E9%9B%86%E5%90%88/Users/spy/AppData/Roaming/Typora/typora-user-images/image-20230827173602465.png"],"datePublished":"2023-08-26T08:28:56.000Z","dateModified":"2023-08-27T09:50:09.536Z","author":{"@type":"Person","name":"Sun Peiyuan"},"publisher":{"@type":"Organization","name":"SPY 的博客","logo":{"@type":"ImageObject","url":"https://spy955.github.io/img/favicon.png"}},"description":"本篇内容：  学习 Java 集合相关理论基础以及底层实现 学习相关面试常见题目，掌握问答精髓 回顾当天所学知识，加深印象"}</script><link rel="canonical" href="https://spy955.github.io/2023/08/26/Java%E5%85%AB%E8%82%A1%E4%B9%8B%E9%9B%86%E5%90%88/"><link rel="icon" href="/img/favicon.png"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0/css/all.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;600&amp;family=Source+Code+Pro"><link rel="stylesheet" href="/css/default.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><!--!--><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css"><!--!--><!--!--><style>.pace{-webkit-pointer-events:none;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.pace-inactive{display:none}.pace .pace-progress{background:#3273dc;position:fixed;z-index:2000;top:0;right:100%;width:100%;height:2px}</style><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><!--!--><!--!--><!-- hexo injector head_end start --><script>
+  (function () {
+      function switchTab() {
+          if (!location.hash) {
+            return;
+          }
+
+          const id = '#' + CSS.escape(location.hash.substring(1));
+          const $tabMenu = document.querySelector(`.tabs a[href="${id}"]`);
+          if (!$tabMenu) {
+            return;
+          }
+
+          const $tabMenuContainer = $tabMenu.parentElement.parentElement;
+          Array.from($tabMenuContainer.children).forEach($menu => $menu.classList.remove('is-active'));
+          Array.from($tabMenuContainer.querySelectorAll('a'))
+              .map($menu => document.getElementById($menu.getAttribute("href").substring(1)))
+              .forEach($content => $content.classList.add('is-hidden'));
+
+          if ($tabMenu) {
+              $tabMenu.parentElement.classList.add('is-active');
+          }
+          const $activeTab = document.querySelector(id);
+          if ($activeTab) {
+              $activeTab.classList.remove('is-hidden');
+          }
+      }
+      switchTab();
+      window.addEventListener('hashchange', switchTab, false);
+  })();
+  </script><!-- hexo injector head_end end --><meta name="generator" content="Hexo 6.3.0"></head><body class="is-2-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/favicon.png" alt="SPY 的博客" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/Spy955"><i class="fab fa-github"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-8-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2023-08-26T08:28:56.000Z" title="2023/8/26 16:28:56">2023-08-26</time>发表</span><span class="level-item"><time dateTime="2023-08-27T09:50:09.536Z" title="2023/8/27 17:50:09">2023-08-27</time>更新</span><span class="level-item">1 小时读完 (大约8402个字)</span></div></div><h1 class="title is-3 is-size-4-mobile">深入 Java 原理之集合篇</h1><div class="content"><p><strong>本篇内容：</strong></p>
+<ol>
+<li>学习 Java 集合相关理论基础以及底层实现</li>
+<li>学习相关面试常见题目，掌握问答精髓</li>
+<li>回顾当天所学知识，加深印象</li>
+</ol>
+<span id="more"></span>
+
+<h2 id="Java-集合经典问答"><a href="#Java-集合经典问答" class="headerlink" title="Java 集合经典问答"></a>Java 集合经典问答</h2><blockquote>
+<p>Java中的集合类都有哪些？</p>
+</blockquote>
+<p>Java 整个集合框架中，主要分为 List、Set、Queue、Stack、Map 等。其中前四种数据结构是单一元素的集合，而 Map 是 KV 形式存储元素。并且前四种都是 Collection 的子接口或者子接口的子接口，而 Collection 有继承了 Iterable 接口，说明这几种集合类型都是可以进行遍历的。</p>
+<p>从功能上讲，List 代表一个容器，可以是先进先出，也可以是先进后出。而Set相对于List来说，是无序的，同时也是一个去重的列表，既然会去重，就一定会通过 equals，compareTo，hashCode 等方法进行比较。Map 则是 KV 的映射，也会涉及到 KV 值的查询等能力。</p>
+<p>从实现上进，List可以有链表实现或者数组实现，两者各有优劣，链表增删快，数组查询快。Queue则可以分为优先队列，双端队列等等。Map则可以分为普通的 HashMap 和可以排序的 TreeMap 等等。</p>
+<blockquote>
+<p>Collection 和 Collections 有什么区别？</p>
+</blockquote>
+<ol>
+<li>Collection 是一个集合接口：该接口提供了对集合对象进行基本操作的通用接口方法。Collection 接口在 Java 类库中有很多具体的实现，是 list、set 的父接口。</li>
+<li>Collections 是一个包装类：它包含各种有关集合操作的静态多态方法。此类不能实例化，就像一个工具类，服务于 Java 的 Collection 框架。</li>
+</ol>
+<blockquote>
+<p>Java 中的 Collection 如何遍历迭代？</p>
+</blockquote>
+<ol>
+<li>传统的for循环</li>
+<li>增强for循环，即for-each结构</li>
+<li>迭代器遍历，Iterator</li>
+</ol>
+<blockquote>
+<p>Iterator 和 Iterable 如何使用？</p>
+</blockquote>
+<p>Iterator 和 Iterable 是两个接口，前者代表的是选代的方式，如 next 和 hasNext 方法就是需要在该接口中实现。后者代表的是是否可以迭代，如果可以迭代，会返回 iterator 接口，即返回迭代方式。</p>
+<p>常见的使用方式一般是集合实现 Iterable 表明该集合可以遍历，同时选择 Iterator 或者自定义一个 Iterator 的实现类去选择遍历方式。</p>
+<blockquote>
+<p>为什么不把 Iterable 和 Iterator 合成一个使用</p>
+</blockquote>
+<p>1.<br>   Iterable和Iterator并不是同时出现的，Iterator于1.2就出现了，目的是为了代替Enumeration，而 iterable 则是1.5才出现的<br>2. 将是否可以选代和迭代方式抽出来，更符合单一职责原则，如果抽出来，迭代方式就可以被多个可迭代的集合复用，更符合面向对象的特点。</p>
+<blockquote>
+<p>说出几种集合排序的方式？</p>
+</blockquote>
+<ol>
+<li>在实体类中继承并实现Comparable接口</li>
+<li>在排序的时候使用Comparator比较器进行比较排序</li>
+<li>使用Stream流来进行比较排序，其底层还是通过Comaprable实现的</li>
+</ol>
+<blockquote>
+<p>为什么有了Comparable之后还需要Comparator？</p>
+</blockquote>
+<ol>
+<li>Comparable用于使某个类具备可排序能力，通过实现该接口后覆盖其compareTo方法，即可具备可排序的能力。</li>
+<li>但是仍然存在一些二方库的类没有实现Comparable，但是调用方也需要比较的，此时就需要使用Comparator接口。</li>
+<li>Comparator是一个比较器接口，可以用来给不具备排序能力的对象进行排序。</li>
+</ol>
+<blockquote>
+<p>追问：为什么有了Comparator之后还需要Comparable？</p>
+</blockquote>
+<ol>
+<li>自然排序: Comparable 接口为类提供了一种默认的自然排序方式。这意味着，如果一个类实现了 Comparable，那么它的对象可以在不需要额外比较器的情况下直接参与排序操作,比如使用Collections.sort()或Arrays.sort()方法。这种自然排序对于简单的、基于类内部属性的排序非常方便。</li>
+<li>简便性: 对于某些场景，你可能只需要简单的排序规则，此时 Comparable 提供了一种更为简便的方法。你只需要实现compareTo方法，然后对象就可以直接参与排序。</li>
+<li>API 设计: 在某些情况下，你可能控制不了外部类的代码，无法为其添加额外的比较器。如果这些类实现了 Comparable 接口，它们的对象就可以在不改变原代码的情况下，被直接用于排序操作。</li>
+<li>性能: Comparable 接口允许对象在内部定义排序规则，这可能在某些情况下比使用外部的Comparator实现更高效</li>
+</ol>
+<blockquote>
+<p>CompareTo和equals的使用场景分别是什么？</p>
+</blockquote>
+<ol>
+<li>CompareTo 通常用于排序和BigDecimal等数值比较</li>
+<li>equals常用于判断两个对象是否相同，例如String常常使用equals来比较字面意义是否相同</li>
+</ol>
+<blockquote>
+<p>既然Set是无序的，那么如何实现排序？</p>
+</blockquote>
+<p>Set的无序指的是插入顺序是无序的，也就是遍历的时候的顺序和添加时的顺序不一样。虽然Set的插入顺序是无序的，Set也可以基于SortedSet要求对象实现Comparable来对Set中的元素进行排序。</p>
+<blockquote>
+<p>Set真的是插入无序的吗？</p>
+</blockquote>
+<p>并不一定是。Set的实现类LinkedHashSet，引用了LinkedHashMap，通过双向链表记录了每个node的插入顺序和查询顺序，以此来实现Set的插入有序性。</p>
+<blockquote>
+<p>简述 fail-safe 和 fail-fast 机制</p>
+</blockquote>
+<ol>
+<li><strong>Fail-Safe</strong>： Fail-safe 是一种设计原则，它指的是在进行迭代操作时，集合会创建一个迭代器的副本，而不是直接在原始集合上进行操作。这样，即使在迭代过程中原始集合发生了修改，副本仍然可以继续进行操作，避免了并发修改异常。Java 中的 <code>CopyOnWriteArrayList</code> 和 <code>ConcurrentHashMap</code> 就是使用 fail-safe 原则的例子。在这些数据结构中，你可以在迭代时安全地进行添加、删除等操作，因为迭代器操作的是一个快照。</li>
+<li><strong>Fail-Fast</strong>： Fail-fast 是另一种设计原则，它强调在并发操作中，一旦检测到集合的结构被修改，就立即抛出异常，防止后续操作引发不可预料的错误。Java 的标准集合类（如 <code>ArrayList</code>、<code>HashSet</code> 等）通常是 fail-fast 的。如果你在迭代集合时，另一个线程对集合进行了修改，那么会立即抛出 <code>ConcurrentModificationException</code> 异常，以提醒你在并发情况下进行了非法操作。</li>
+<li>总之，<code>fail-safe</code> 原则通过复制数据结构的副本来避免并发修改异常，而 <code>fail-fast</code> 原则通过检测修改来快速发现并报告并发问题。在选择使用哪种原则时，你需要根据应用的需求和并发情况来进行权衡。</li>
+</ol>
+<blockquote>
+<p>在 CopyOnWriteArrayList 中，对add&#x2F;remove方法都进行了加锁操作，但是为什么还需要 copy 一个副本出来呢？或者什么是 Copy-On-Write 机制？</p>
+</blockquote>
+<ol>
+<li>Copy-On-Write简称COW，是一种用于程序设计中的优化策略。其基本思路是，从一开始大家都在共享同一个内容，当某个人想要修改这个内容的时候，才会真正把内容Copy出去形成一个新的内容然后再改，这是一种延时懒惰策略。</li>
+<li>CopyOnWrite容器即写时复制的容器。通俗的理解是当我们往一个容器添加元素的时候，不直接往当前容器添加，而是先将当前容器进行Copy，复制出一个新的容器，然后新的容器里添加元素，添加完元素之后，再将原容器的引用指向新的容器。</li>
+<li>CopyOnWriteArrayList中add&#x2F;remove等写方法是需要加锁的，目的是为了避免Copy出N个副本出来，导致并发写。但是，CopyOnWriteArrayList中的读方法是没有加锁的。</li>
+<li>这样做的好处是我们可以对CopyOnWrite容器进行并发的读，当然，这里读到的数据可能不是最新的。因为写时复制的思想是通过延时更新的策略来实现数据的最终一致性的，并非强一致性。所以CopyOnWrite容器是一种读写分离的思想，读和写不同的容器。</li>
+</ol>
+<blockquote>
+<p>遍历的同时修改List有几种方法？</p>
+</blockquote>
+<ol>
+<li>使用普通的 for 循环</li>
+<li>使用迭代器循环</li>
+<li>将原来的集合copy一个副本，遍历原来的list，然后删除副本</li>
+<li>使用并发安全的集合类，如CopyOnWriteArrayList</li>
+<li>通过Stream的过滤方法，因为每次Stream处理之后都会生成一个新的Stream，因此不存在并发问题，所以Stream的filter也可以修改list集合</li>
+<li>使用removeIf方法，removeIf方法可以过滤删除所有满足条件的元素</li>
+</ol>
+<blockquote>
+<p>介绍Set的实现方式并且指出他们如何保证元素不重复</p>
+</blockquote>
+<ol>
+<li>Set根据实现方式不同主要分为两大类。HashSet和TreeSet。</li>
+<li>TreeSet 是二叉树实现的，TreeSet中的数据是自动排好序的，不允许放入null值; 底层基于TreeMap。</li>
+<li>HashSet 是哈希表实现的，HashSet中的数据是无序的，可以放入null，但只能放入一个null，两者中的值都不能重复，就如数据库中唯一约束;底层基于HashMap</li>
+<li>在HashSet中，基本的操作都是有HashMap底层实现的，因为HashSet底层是用HashMap存储数据的。当向HashSet中添加元素的时候，首先计算元素的hashCode值，然后通过扰动计算和按位与的方式计算出这入元素的存储位置，如果这人位置为空，就将元素添加进去;如果不为空，则用equals方法比较元素是否相等，相等就不添加，否则找一个空位添加。</li>
+<li>TreeSet的底层是TreeMap的keySet，而TreeMap是基于红黑树实现的，红黑树是一种平衡二叉查找树，它能保证任何一个节点的左右子树的高度差不会超过较矮的那棵的一倍。TreeMap是按key排序的，元素在插入TreeSet时compareTo方法要被调用，所以TreeSet中的元素要实现Comparable接口。TreeSet作为一种Set，它不允许出现重复元素。TreeSet是用compareTo来判新重复元素的。</li>
+</ol>
+<blockquote>
+<p>HashSet，TreeSet，LinkedHashSet，BitSet有何区别</p>
+</blockquote>
+<p><strong>功能不同:</strong> </p>
+<ol>
+<li>HashSet是功能最简单的Set，只提供去重的能力</li>
+<li>LinkedHashSet不仅提供去重功能，而且还能记录插入和查询顺序</li>
+<li>TreeSet提供了去重和排序的能力;</li>
+<li>BitSet不仅能提供去重能力，同时也能减少存储空间的浪费，不过对于普通的对象不太友好，需要做额外处理</li>
+</ol>
+<p><strong>实现方式不同:</strong> </p>
+<ol>
+<li>HashSet基于HashMap，去重是根据HashCode和equals方法的</li>
+<li>LinkedHashSet是基于LinkedHashMap，通过双向链表记录插入顺序</li>
+<li>TreeSet是基于TreeMap的，去重是根据compareTo方法的</li>
+<li>BitSet基于位数组，一般只用于数字的存储和去重。其实BitSet只是叫做Set而已，它既没有实现Collection接口，也和Iterable接口没有什么关系，但是是名字相似而已</li>
+</ol>
+<blockquote>
+<p>什么是BitSet，有什么优势和缺点？</p>
+</blockquote>
+<ol>
+<li>BitSet 是位集合，在底层数据结构是一个bit数组。如果n加入到集合中，就将第n位元素设置为1即可</li>
+<li>优势：降低了存储空间，如正常情况下，将每一个int类型(32bit)的数字存储到内存中需要 4B *(2^31-1) &#x3D; 8 GB，但是如果用BitSet的话，就会节省到原来的1&#x2F;32。</li>
+<li>缺点：当集合中存储一些差值比较大的数，如1亿和1两个数，就会导致内存的严重浪费</li>
+<li>应用场景：BitSet常见的使用例子往往和大数相关<ul>
+<li>现在有1千万个随机数，随机数的范围在1到1亿之间。求出将1到1亿之间没有在随机数中的数</li>
+<li>统计N亿个数据中没有出现的数据</li>
+<li>将N亿个不同数据进行排序等</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>ArrayList、LinkedList和Vector有哪些区别？</p>
+</blockquote>
+<p>List主要有ArrayList、LinkedList与Vector几种实现。这三者都实现了List 接口，使用方式也很相似,主要区别在于因为实现方式的不同,所以对不同的操作具有不同的效率。</p>
+<ol>
+<li>ArrayLlist 是一个可改变大小的数组当元素加入到ArravList中时,其大小将会动态地增长内部的元素。可以直接通过get与set方法进行访问,因为ArrayList本质上就是一个数组。</li>
+<li>LinkedList 是一个双向链表，在添加和删除元素时具有比ArrayList更好的性能，但在get与set方面弱于ArrayList。当然,这些对比都是指数据量很大或者操作很频繁的情况下的对比,如果数据和运算量很小,那么对比将失去意义。</li>
+<li>Vector 和ArrayList类似,但属于强同步类。如果你的程序本身是线程安全的(thread-safe,没有在多个线程之间共享同一个集合&#x2F;对象)。那么使用ArrayList是更好的选择。</li>
+</ol>
+<p>Vector和ArrayList在更多元素添加进来时会请求更大的空间。Vector每次请求其大小的双倍空间，而ArrayList每次对size增长50%。而LinkedList 还实现了Queue和Deque接门,该接口比List提供了更多的方法,包括offer(),peek(),poll()等.<br>默认情况下ArrayList的初始容量非常小,所以如果可以预估数据量的话,分配一个较大的初始值属于最佳实践，这样可以减少调整大小的开销。</p>
+<blockquote>
+<p>ArrayList 如何进行扩容？</p>
+</blockquote>
+<ol>
+<li>检查新增元素后是否会超过数组的容量，如果超过，则进行下一步扩容</li>
+<li>设置新的容量为老容量的1.5倍，最多不超过2^31-1 </li>
+<li>申请一个容量为1.5倍的数组，并将老数组的元素复制到新数组中，扩容完成</li>
+</ol>
+<blockquote>
+<p>如何使用list实现LRU？</p>
+</blockquote>
+<p>LRU，即最近最少使用策略，基于时空局部性原理(最近访问的，未来也会被访问)，往往作为缓存淘汰的策略。如Redis和GuavaMap都使用了这种淘汰策略。使用方式是将当前访问的进行缓存，剔除最后一个很久没被访问的元素。</p>
+<blockquote>
+<p>ArrayList的subList有什么使用建议？</p>
+</blockquote>
+<p>list的subList方法并没有创建一个新的List，而是使用了原List的视图，也就是在原list中指定了元素的范围然后进行展示。所以我们不能把subList方法返回的List强制转换成ArrayList等类，因为他们之间没有继承关系。</p>
+<p>因此以下几种操作都会对二者产生影响：</p>
+<ol>
+<li>对父(sourceList)子(subList)List做的非结构性修改 (non-structural changes)，都会影响到彼此（如修改元素，二者都会添加）</li>
+<li>对子List做结构性修改，操作同样会反映到父List 上。（如在末尾增添元素，则二者都会增加）</li>
+<li>对父List做结构性修改，会抛出异常ConcurrentModificationException。（如在末尾增添元素，则会抛出异常）</li>
+</ol>
+<blockquote>
+<p>ArrayList如何实现序列化？</p>
+</blockquote>
+<p>ArrayList 底层是通过 Object 数组完成数据存储的，但是这个数组被声明成了 transient，说明在默认的序列化策略中并没有序列化数组字段。ArrayList 在实现序列化时，实际上是通过自定义序列化和反序列化方法来处理其元素。即 <code>writeObject</code> 和 <code>readObject</code> 方法，也可以在自己的类中覆盖这些方法来指定序列化和反序列化的过程。</p>
+<blockquote>
+<p>为什么 ArrayList 底层 Object 数组设置为transient？</p>
+</blockquote>
+<p>ArrayList实际上是动态数组，每次在放满以后自动增长设定的长度值，如果数组自动增长长度设为100而实际只放了一个元素，那就会序列化99个null元素。为了保证在序列化的时候不会将这么多null同时进行序列化，ArrayList把元素数组设置为transient。</p>
+<blockquote>
+<p>如何解决哈希冲突？</p>
+</blockquote>
+<p>目前解决哈希冲突的算法有多种，例如拉链寻址、开放寻址、合并散列、杜鹃散列、跳房子散列、罗宾汉哈希等</p>
+<ol>
+<li>拉链寻址。将哈希表的每个单元作为链表的头结点，所有哈希地址相同的元素构成一个链表。即发生冲突时就把该关键字链在以该单元为头结点的链表的尾部。</li>
+<li>开放寻址。开放寻址的设计会对碰撞的元素，寻找哈希桶上新的位置，这个位置从当前碰撞位置开始向后寻找，直到找到空的位置存放。</li>
+<li>合并散列。合并散列的原理是，当发生哈希冲突时，将冲突的元素加到哈希表的最后，然后将当前哈希值的指针指向冲突的元素。也就是将发生哈希碰撞的元素进行链接。</li>
+<li>杜鹃散列的基本思想是通过使用两个散列函数而不是仅一个散列函数来解决冲突。</li>
+<li>跳房子散列。</li>
+<li>罗宾汉哈希。当我们进行插入时，如果发现单元格被其他键值对占用，那么就需要比较这俩人键距离其原本位置的距离。距离较远的键值对留下，距离较近的被迫后移。</li>
+</ol>
+<blockquote>
+<p>拉链寻址法有什么优缺点？</p>
+</blockquote>
+<p>优点：</p>
+<ol>
+<li>处理比较简单</li>
+<li>适合经常插入或者删除的情况</li>
+<li>适合没有预留空间的情况</li>
+</ol>
+<p>缺点：当冲突较多的时候，查找时间复杂度O(n)</p>
+<blockquote>
+<p>HashMap 如何存储数据？</p>
+</blockquote>
+<p>JDK1.8 之前 <code>HashMap</code> 底层是 <strong>数组和链表</strong> 结合在一起使用也就是 <strong>链表散列</strong>。HashMap 通过 key 的 <code>hashcode</code> 经过扰动函数处理过后得到 hash 值，然后通过 <code>(n - 1) &amp; hash</code> 判断当前元素存放的位置（这里的 n 指的是数组的长度），如果当前位置存在元素的话，就判断该元素与要存入的元素的 hash 值以及 key 是否相同，如果相同的话，直接覆盖，不相同就通过拉链法解决冲突。</p>
+<p>JDK1.8 之后在解决哈希冲突时有了较大的变化，当链表长度大于阈值（默认为 8）（将链表转换成红黑树前会判断，如果当前数组的长度小于 64，那么会选择先进行数组扩容，而不是转换为红黑树）时，将链表转化为红黑树，以减少搜索时间。</p>
+<blockquote>
+<p>HashMap、HashTable、CurrentHashMap有什么区别？</p>
+</blockquote>
+<ul>
+<li><p><strong>线程安全:</strong></p>
+<p>HashMap 是非线程安全的。</p>
+<p>Hashtable 中的方法是同步的，所以它是线程安全的。</p>
+<p>ConcurrentHashMap 在 JDK 1.8 之前使用分段锁保证线程安全，ConcurrentHashMap 默认情况下将 hash 表分为16个桶(分片)，在加锁的时候，针对每个单独的分片进行加锁，其他分片不受影响。锁的粒度更细，所以性能更好。ConcurrentHashMap在JDK 1.8中，采用了一种新的方式来实现线程安全，即使用了CAS+synchronized，这实现被称为”分段锁”的变种，也被称为”锁分离”，它将锁定粒度更细，把锁的粒度从整个Map降低到了单个桶。</p>
+</li>
+<li><p><strong>继承关系：</strong></p>
+<p>HashTable是基于陈旧的的Dictionary类继承来的。</p>
+<p>HashMap继承的抽象类AbstractMap实现了Map接口</p>
+<p>ConcurrentHashMap同样继承了抽象类AbstractMap，并且实现了ConcurrentMap口接。</p>
+</li>
+<li><p><strong>允不允许null值:</strong></p>
+<p>HashTable中，key和value都不允许出现null值，否则会抛出NullPointerException异常.</p>
+<p>HashMap中，null可以作为键或者值都可以。（始终放在数组的第一个位置）</p>
+<p>ConcurrentHashMap中，key和value都不允许为null。</p>
+</li>
+<li><p><strong>默认初始容量和扩容机制:</strong></p>
+<p>HashMap的默认初始容量为16，默认的加载因子为0.75，即当HashMap中元素个数超过容量的75%时，会进行扩容操作。扩容时，容量会扩大为原来的两倍，并将原来的元素重新分配到新的桶中。</p>
+<p>Hashtable，默认初始容量为11，默认的加载因子为0.75，即当Hashtable中元素个数超过容量的75%时，会进行扩容操作。扩容时，容量会扩大为原来的两倍加1，并将原来的元素重新分配到新的桶中。</p>
+<p>ConcurrentHashMap，默认初始容量为16，默认的加载因子为0.75，即当ConcurrentHashMap中元素个数超过容量的75%时，会进行扩容操作。扩容时，容量会扩大为原来的两倍，并会采用分段锁机制，将ConcurrentHashMap分为多个段(segment)，每个段独立进行扩容操作，避免了整个ConcurrentHashMap的锁竞争。</p>
+</li>
+<li><p><strong>遍历方式的内部实现上不同:</strong></p>
+<p>HashMap使用EntrySet进行遍历，即先获取到HashMap中所有的键值对(Entry)，然后遍历Entry集合。支持failfast，也就是说在遍历过程中，若HashMap的结构被修改 (添加或删除元素)，则会抛出ConcurrentModificationException如果只需要遍历HashMap中的key或value，可以使用KeySet或Values来遍历。</p>
+<p>Hashtable使用Enumeration进行遍历，即获取Hashtable中所有的key，然后遍历key集合。遍历过程中Hashtable的结构发生变化时，Enumeration会失效。</p>
+<p>ConcurrentHashMap使用分段锁机制，因此在遍历时需要注意，遍历时ConcurrentHashMap的某个段被修改不会影响其他段的遍历。可以使用EntrySet、KeySet或Values来遍历ConcurrentHashMap，其中EntrySet遍历时效率最高。遍历过程中，ConcurrentHashMap的结构发生变化时，不会抛出ConcurrentModificationExceptior异常，但是在遍历时可能会出现数据不一致的情况，因为遍历器仅提供了弱一致性保障.</p>
+</li>
+</ul>
+<blockquote>
+<p>HashMap的get和put方法实现过程</p>
+</blockquote>
+<ol>
+<li><p>get 方法。对于get方法来说会先查找桶，如果hash值相同并且key值相同，则返回该node节点，如果不同，则当node.next!&#x3D;null时，判断是红黑树还是链表，之后根据相应方法进行查找。</p>
+</li>
+<li><p>put 方法。</p>
+<ol>
+<li><p>如果数组没有被初始化，先初始化数组</p>
+</li>
+<li><p>首先通过定位到要put的key在哪个桶中，如果该桶中没有元素，则将该要put的entry放置在该桶中</p>
+</li>
+<li><p>如果该桶中已经有元素，则遍历该桶所属的链表</p>
+<p>如果该链表已经树化，则执行红黑树的插入流程</p>
+<p>如果仍然是链表，则执行链表的插入流程，如果插入后链表的长度大于等于8，并且桶数组的容量大于64，则执行链表的树化流程，如果插入后链表的长度大于等于8，并且桶数组的容量小于64，则先执行扩容操作。注意: 在上面的步骤中，如果元素和要put的元素相同，则直接替换</p>
+</li>
+<li><p>校验++size是否超过threshold，如果超过，则执行扩容流程</p>
+</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<p>HashMap 如何定位 key？</p>
+</blockquote>
+<p>先通过 <code>(table.length - 1) &amp; (key.hashCode ^ (key.hashCode &gt;&gt; 16))</code> 定位到key位于哪 table中然后再通过 <code>key.equals(rowKey)</code> 来判断两个key是否相同，综上，是先通过hashCode和equals来定位KEY的。</p>
+<ol>
+<li><strong>为什么是用&amp;而不是用%:</strong> 因为&amp;是基于内存的二进制直接运算，比转成十进制的取模快的多。以下运算等价: X % 2^n &#x3D; X &amp; (2^n - 1) 这也是hashMap每次扩容都要到2^n的原因</li>
+<li>为什么用key.hashCode ^(key.hashCode &gt;&gt; 16)而不是用 key.hashCode 这是因为增加了扰动计算，使得hash分布的尽可能均匀。因为hashCode是int类型，虽然能映射40亿左右的空间，但是，HashMap的table.ength毕竟不能有那么大，所以为了使hash%table.length之后，分布的尽可能均匀，就需要对实例的hashCode的值进行扰动，说白了，就是将hashCode的高16和低16位，进行异或，使得hashCode的值更加分散一点。如果不进行这步操作，那么由于table.length的原因，key.hashCode的高位无法发挥作用</li>
+</ol>
+<blockquote>
+<p>为什么 HashMap 的数组长度始终为 2^n？</p>
+</blockquote>
+<p>HashMap是通过 <code>(table.length - 1) &amp; (key.hashode ^ (key.hashCode &gt;&gt; 16))</code> 定位tablelndex的。</p>
+<p>因为&amp;是基于内存的二进制直接运算，比转成十进制的取模快的多。又因为 X % 2^n &#x3D; X &amp; (2^n - 1)，可以把%运算转换为&amp;运算。所以，hashMap的capcatiy一定要是2^n，这样HashMap计算hash的速度才够快。</p>
+<blockquote>
+<p>如何保证的 HashMap 的数组长度始终为 2^n？</p>
+</blockquote>
+<ol>
+<li>初始化时期：在初始化的时候找到一个比当前传入值大的最近的2^n的值，作为数组长度。</li>
+<li>扩容时期：当目前HashMap中的元素个数大于临界值的时候，会发生扩容，在扩容的时候扩容为之前的两倍，同样保证了数组长度为 2^n。</li>
+</ol>
+<blockquote>
+<p>HashMap中的负载因子为多少？为什么？</p>
+</blockquote>
+<p>HashMap中的负载因子为0.75，即当当前元素个数大于数组长度 * 0.75的时候发生扩容。</p>
+<p>原因：</p>
+<ol>
+<li>如果当HashMap完全填满时，再进行发生扩容操作的代价会很高，因为需要重新计算所有键的哈希码并重新分配到新的桶中。这可能导致性能下降。而且，随着HashMap中添加的元素越来越多，哈希冲突的概率会增加，因为元素分布在相对较少的桶中，极端情况下可能会导致某个Entry下引用了很长的链表，最终的结果就是虽然节省了空间，但是查询和插入都会很耗时间。</li>
+<li>理论上负载因子不能太大，不然会导致大量的哈希冲突，也不能太小，那样会浪费空间。通过一个数学推理，测算出这个数值在0.7左右是比较合理的。由于 threshold&#x3D;loadFactor*capacity，并且capacity永远都是2的幕，为了保证负载因子(loadFactor) 容量(capacity) 的结果是一个整数，这个值是3&#x2F;4比较合理，因为这个数和任何2的幂乘积结果都是整数。</li>
+</ol>
+<blockquote>
+<p>HashMap为什么需要扩容？扩容操作如何进行的？</p>
+</blockquote>
+<ol>
+<li>假设现在散列表中的元素已经很多了，但是现在散列表的链化已经比较严重了，哪怕是树化了时间复杂度也没有O(1)好，所以需要扩容来降低Hash冲突的概率，以此来提高性能。</li>
+<li>我们知道,当 ++size &gt; threshold 之后，HashMap就会初始化新的新的桶数组，该桶数组的size为原来的两倍，在扩大桶数组的过程中，会涉及两个部分:<ol>
+<li>如果某桶节点没有形成链表，则直接rehash到其他桶中</li>
+<li>如果桶中形成链表，则将链表重新链接</li>
+<li>如果桶中的链表已经形成红黑树，但是链表中的元素个数小于6，则进行取消树化的操作</li>
+</ol>
+</li>
+</ol>
+<p>链表重新链接的时候有两种情况：</p>
+<ol>
+<li>当hash(k) &amp; oldCap &#x3D; 0时，这些链表的节点还是在原来的节点中</li>
+<li>如果hash(k) &amp; oldCap !&#x3D; 0时，这些链表的节点会到桶新增的位置中，且都是同一个桶。</li>
+</ol>
+<img src="/2023/08/26/Java%E5%85%AB%E8%82%A1%E4%B9%8B%E9%9B%86%E5%90%88/Users\spy\AppData\Roaming\Typora\typora-user-images\image-20230827173602465.png" alt="image-20230827173602465" style="zoom:67%;">
+
+<blockquote>
+<p>为什么JDK8之后不继续使用链表而是改为红黑树？</p>
+</blockquote>
+<p>当某个bucket的哈希冲突过多的时候，其指向的链表就会变得很长，这样如果put或者get该bucket上的元素时，复杂度就无限接近于O(N)。、</p>
+<p>所以在JDK1.7的时候，在元素put之前做hash的时候，就会充分利用扰动函数，将不同KEY的hash尽可能的分散开。不过这样做起来效果还不是太好，所以当链表过长的时候，我们就要对其数据结构进行修改。</p>
+<blockquote>
+<p>为什么时红黑树而不是二分查找树或者AVL树？</p>
+</blockquote>
+<ol>
+<li>使用二分查找树的话，在极端情况下，例如加入的元素都小于原来的元素，那么这样的话依旧会退化成为链表。</li>
+<li>红黑树不会像AVL树一样追求绝对的平衡，它的插入最多两次旋转，删除最多三次旋转。在频繁的插入和删除场景中，红黑树的时间复杂度，是优于AVL树的。</li>
+</ol>
+<blockquote>
+<p>为什么不直接使用红黑树，而是先使用链表呢？</p>
+</blockquote>
+<p>从空间维度来进，因为红黑树的空间是普通链表节点空间的2倍，立刻转为红黑树后，太浪费空间；从时间维度上讲，红黑树虽然查询比链表快，但是插入比链表慢多了，每次插入都要旋转和变色，如果小于8就转为红黑树，时间和空间的综合平衡上就没有链表好</p>
+<blockquote>
+<p>为什么设置转换的数字是8呢？</p>
+</blockquote>
+<p>官方文档中认为，当 hashCode遵循泊松分布时，因为哈希冲突造成桶的链表长度等于8的概率只有0.00000006。官方认为这个概率足够的低，所以指定链表长度为 8 时转化为红黑树。同时避免树化过早而造成时间和空间上的浪费。</p>
+<blockquote>
+<p>为什么设置小于6的时候就转回来？</p>
+</blockquote>
+<p>这个设计的主要原因是出于对于性能和空间的考虑。转成红黑树之后总要在适当的时机转回来，要不然无论是空间占用而且插入性能都会下降。大于8的时候转成红黑树，那么如果小于8立刻转回去，那么就可能会导致频繁转换，当红黑树节点数小于 6 时，它所带来的优势其实就是已经没有那么大了，就不足以抵消由于红黑树维护节点所带来的额外开销，此时转换回链表能够节省空间和时间。但是不管怎样，6 这个数值是通过大量实验得到的经验值，在绝大多数情况下取得比较好的效果。</p>
+<blockquote>
+<p>为什么HashMap数据结构中使用双向链表？</p>
+</blockquote>
+<p>HashMap红黑树的数据结构中，不仅有常见的parent,left，right节点，还有一个next和prev节点。这说明，其不仅是一个红黑树，还是一个双向链表。</p>
+<p>原因是：红黑树会记录树化之前的链表结构，这样当红黑树化成链表的时候，就可以直接按照链表重新链接的方式进行。当删除节点的时候，只有next属性是没办法将原始的链表重新链接的，所以就需要prev节点，找到上一个节点，重新成链。</p>
+<blockquote>
+<p>HashMap的元素没有比较能力，红黑树为什么可以比较?</p>
+</blockquote>
+<p>如果元素实现了comparable接口，则直接比较，否则使用默认的仲裁方法</p>
+</div><div class="article-licensing box"><div class="licensing-title"><p>深入 Java 原理之集合篇</p><p><a href="https://spy955.github.io/2023/08/26/Java八股之集合/">https://spy955.github.io/2023/08/26/Java八股之集合/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>Sun Peiyuan</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2023-08-26</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2023-08-27</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icons" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="icon fab fa-creative-commons"></i></a><a class="icons" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="icon fab fa-creative-commons-by"></i></a><a class="icons" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="icon fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/Interview-preparation/">Interview preparation</a></div><!--!--></article></div><div class="card"><div class="card-content"><h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3><div class="buttons is-centered"><a class="button donate" href="/" target="_blank" rel="noopener" data-type="afdian"><span class="icon is-small"><i class="fas fa-charging-station"></i></span><span>爱发电</span></a><a class="button donate" data-type="alipay"><span class="icon is-small"><i class="fab fa-alipay"></i></span><span>支付宝</span><span class="qrcode"><img src="/" alt="支付宝"></span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="buymeacoffee"><span class="icon is-small"><i class="fas fa-coffee"></i></span><span>送我杯咖啡</span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="patreon"><span class="icon is-small"><i class="fab fa-patreon"></i></span><span>Patreon</span></a></div></div></div><nav class="post-navigation mt-4 level is-mobile"><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2023/08/24/JavaSE/"><span class="level-item">深入学习 Java 原理之基础篇</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><div class="card"><div class="card-content"><h3 class="title is-5">评论</h3><div id="disqus_thread"><noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript></div><script>var disqus_config = function () {
+            this.page.url = 'https://spy955.github.io/2023/08/26/Java%E5%85%AB%E8%82%A1%E4%B9%8B%E9%9B%86%E5%90%88/';
+            this.page.identifier = '2023/08/26/Java八股之集合/';
+        };
+        (function() {
+            var d = document, s = d.createElement('script');  
+            s.src = '//' + 'SPY' + '.disqus.com/embed.js';
+            s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+        })();</script></div></div></div><div class="column column-left is-4-tablet is-4-desktop is-4-widescreen  order-1"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar" src="/img/hutao.jpg" alt="SPY"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">SPY</p><p class="is-size-6 is-block">一个热爱并追求技术的小白</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>上海</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">16</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">3</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">10</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/Spy955" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile is-multiline"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/Spy955"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Facebook" href="https://facebook.com"><i class="fab fa-facebook"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Twitter" href="https://twitter.com"><i class="fab fa-twitter"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Dribbble" href="https://dribbble.com"><i class="fab fa-dribbble"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="RSS" href="/"><i class="fas fa-rss"></i></a></div></div></div><!--!--><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/Algorithm/"><span class="level-start"><span class="level-item">Algorithm</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/Java/"><span class="level-start"><span class="level-item">Java</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/categories/MySQL/"><span class="level-start"><span class="level-item">MySQL</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="recent-posts"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-08-26T08:28:56.000Z">2023-08-26</time></p><p class="title"><a href="/2023/08/26/Java%E5%85%AB%E8%82%A1%E4%B9%8B%E9%9B%86%E5%90%88/">深入 Java 原理之集合篇</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-08-24T09:40:47.000Z">2023-08-24</time></p><p class="title"><a href="/2023/08/24/JavaSE/">深入学习 Java 原理之基础篇</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-08-16T06:11:29.000Z">2023-08-16</time></p><p class="title"><a href="/2023/08/16/Data-Structure/">数据结构</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-07-12T05:28:39.000Z">2023-07-12</time></p><p class="title"><a href="/2023/07/12/%E8%AE%A1%E7%BD%91/">计算机基础——计算机网络</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-07-07T05:58:29.000Z">2023-07-07</time></p><p class="title"><a href="/2023/07/07/Lottery-API/">Lottery-API</a></p></div></article></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2023/"><span class="level-start"><span class="level-item">2023</span></span><span class="level-end"><span class="level-item tag">10</span></span></a></li><li><a class="level is-mobile" href="/archives/2022/"><span class="level-start"><span class="level-item">2022</span></span><span class="level-end"><span class="level-item tag">6</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/Algorithm/"><span class="tag">Algorithm</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Computer-Basics/"><span class="tag">Computer Basics</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Data-Structure/"><span class="tag">Data Structure</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Interview-preparation/"><span class="tag">Interview preparation</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Java/"><span class="tag">Java</span><span class="tag">7</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Java-Project/"><span class="tag">Java_Project</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/MySQL/"><span class="tag">MySQL</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/SQL/"><span class="tag">SQL</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Web/"><span class="tag">Web</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/web/"><span class="tag">web</span><span class="tag">1</span></a></div></div></div></div></div><div class="card widget" data-type="subscribe-email"><div class="card-content"><div class="menu"><h3 class="menu-label">订阅更新</h3><form action="https://feedburner.google.com/fb/a/mailverify" method="post" target="popupwindow" onsubmit="window.open(&#039;https://feedburner.google.com/fb/a/mailverify?uri=&#039;,&#039;popupwindow&#039;,&#039;scrollbars=yes,width=550,height=520&#039;);return true"><input type="hidden" value="" name="uri"><input type="hidden" name="loc" value="en_US"><div class="field has-addons"><div class="control has-icons-left is-expanded"><input class="input" name="email" type="email" placeholder="Email"><span class="icon is-small is-left"><i class="fas fa-envelope"></i></span></div><div class="control"><input class="button" type="submit" value="订阅"></div></div></form></div></div></div></div><!--!--></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img src="/img/favicon.png" alt="SPY 的博客" height="28"></a><p class="is-size-7"><span>&copy; 2023 Sun Peiyuan</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a></p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/Spy955"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script><script>moment.locale("zh-cn");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.js" defer></script><script>window.addEventListener("load", () => {
+      window.cookieconsent.initialise({
+        type: "info",
+        theme: "edgeless",
+        static: false,
+        position: "bottom-left",
+        content: {
+          message: "此网站使用Cookie来改善您的体验。",
+          dismiss: "知道了！",
+          allow: "允许使用Cookie",
+          deny: "拒绝",
+          link: "了解更多",
+          policy: "Cookie政策",
+          href: "https://www.cookiesandyou.com/",
+        },
+        palette: {
+          popup: {
+            background: "#edeff5",
+            text: "#838391"
+          },
+          button: {
+            background: "#4b81e8"
+          },
+        },
+      });
+    });</script><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><!--!--><!--!--><!--!--><script src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script src="/js/insight.js" defer></script><script>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/wanko.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body></html>
