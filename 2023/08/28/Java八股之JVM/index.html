@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>深入理解 Java 原理之 JVM - SPY 的博客</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="SPY 的博客"><meta name="msapplication-TileImage" content="/img/favicon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SPY 的博客"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="description" content="本篇内容：  学习 JVM 相关理论基础以及底层实现 学习相关面试常见题目，掌握问答精髓 回顾当天所学知识，加深印象"><meta property="og:type" content="blog"><meta property="og:title" content="深入理解 Java 原理之 JVM"><meta property="og:url" content="https://spy955.github.io/2023/08/28/Java%E5%85%AB%E8%82%A1%E4%B9%8BJVM/"><meta property="og:site_name" content="SPY 的博客"><meta property="og:description" content="本篇内容：  学习 JVM 相关理论基础以及底层实现 学习相关面试常见题目，掌握问答精髓 回顾当天所学知识，加深印象"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="https://spy955.github.io/img/og_image.png"><meta property="article:published_time" content="2023-08-28T01:20:05.000Z"><meta property="article:modified_time" content="2023-08-28T09:59:44.390Z"><meta property="article:author" content="Sun Peiyuan"><meta property="article:tag" content="Interview preparation"><meta property="twitter:card" content="summary"><meta property="twitter:image:src" content="https://spy955.github.io/img/og_image.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://spy955.github.io/2023/08/28/Java%E5%85%AB%E8%82%A1%E4%B9%8BJVM/"},"headline":"深入理解 Java 原理之 JVM","image":["https://spy955.github.io/img/og_image.png"],"datePublished":"2023-08-28T01:20:05.000Z","dateModified":"2023-08-28T09:59:44.390Z","author":{"@type":"Person","name":"Sun Peiyuan"},"publisher":{"@type":"Organization","name":"SPY 的博客","logo":{"@type":"ImageObject","url":"https://spy955.github.io/img/favicon.png"}},"description":"本篇内容：  学习 JVM 相关理论基础以及底层实现 学习相关面试常见题目，掌握问答精髓 回顾当天所学知识，加深印象"}</script><link rel="canonical" href="https://spy955.github.io/2023/08/28/Java%E5%85%AB%E8%82%A1%E4%B9%8BJVM/"><link rel="icon" href="/img/favicon.png"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0/css/all.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;600&amp;family=Source+Code+Pro"><link rel="stylesheet" href="/css/default.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><!--!--><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css"><!--!--><!--!--><style>.pace{-webkit-pointer-events:none;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.pace-inactive{display:none}.pace .pace-progress{background:#3273dc;position:fixed;z-index:2000;top:0;right:100%;width:100%;height:2px}</style><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><!--!--><!--!--><!-- hexo injector head_end start --><script>
+  (function () {
+      function switchTab() {
+          if (!location.hash) {
+            return;
+          }
+
+          const id = '#' + CSS.escape(location.hash.substring(1));
+          const $tabMenu = document.querySelector(`.tabs a[href="${id}"]`);
+          if (!$tabMenu) {
+            return;
+          }
+
+          const $tabMenuContainer = $tabMenu.parentElement.parentElement;
+          Array.from($tabMenuContainer.children).forEach($menu => $menu.classList.remove('is-active'));
+          Array.from($tabMenuContainer.querySelectorAll('a'))
+              .map($menu => document.getElementById($menu.getAttribute("href").substring(1)))
+              .forEach($content => $content.classList.add('is-hidden'));
+
+          if ($tabMenu) {
+              $tabMenu.parentElement.classList.add('is-active');
+          }
+          const $activeTab = document.querySelector(id);
+          if ($activeTab) {
+              $activeTab.classList.remove('is-hidden');
+          }
+      }
+      switchTab();
+      window.addEventListener('hashchange', switchTab, false);
+  })();
+  </script><!-- hexo injector head_end end --><meta name="generator" content="Hexo 6.3.0"></head><body class="is-2-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/favicon.png" alt="SPY 的博客" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/Spy955"><i class="fab fa-github"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-8-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2023-08-28T01:20:05.000Z" title="2023/8/28 09:20:05">2023-08-28</time>发表</span><span class="level-item"><time dateTime="2023-08-28T09:59:44.390Z" title="2023/8/28 17:59:44">2023-08-28</time>更新</span><span class="level-item">17 分钟读完 (大约2574个字)</span></div></div><h1 class="title is-3 is-size-4-mobile">深入理解 Java 原理之 JVM</h1><div class="content"><p><strong>本篇内容：</strong></p>
+<ol>
+<li>学习 JVM 相关理论基础以及底层实现</li>
+<li>学习相关面试常见题目，掌握问答精髓</li>
+<li>回顾当天所学知识，加深印象</li>
+</ol>
+<span id="more"></span>
+
+<h2 id="JVM-基础经典问答"><a href="#JVM-基础经典问答" class="headerlink" title="JVM 基础经典问答"></a>JVM 基础经典问答</h2><blockquote>
+<p>Java如何实现一次编译，到处运行？（Java如何做到平台无关性？）</p>
+</blockquote>
+<ol>
+<li>Java 首先将代码编译成为字节码文件(.class文件)，然后通过Java虚拟机对字节码文件进行解释执行。其实现一次编译到处运行主要是通过以下三个方面。</li>
+<li>首先是Java虚拟机，Java之所以可以做到跨平台，是因为Java虚拟机充当了桥梁。他扮演了运行时Java程序与其下的硬件和操作系统之间的缓冲角色。我们可以理解为Java之所以可以做到跨平台，正是因为JVM是依赖平台的。</li>
+<li>然后是字节码文件。因为 Java 字节码文件可以在任何平台创建，也可以被任何平台的Java虚拟机装载并执行，所以才有了Java的平台无<br>关性。</li>
+<li>最后是Java的语言规范保障了其跨平台运行的特点。例如Java保证了基本数据类型的平台一致性。</li>
+</ol>
+<blockquote>
+<p>Java中所有的基本数据类型大小都是可以确定的吗？</p>
+</blockquote>
+<p>boolean类型就无法确定。如果是单个boolean类型，长度为32bit；如果是boolean数组，则每个boolean值的长度为8bit。</p>
+<blockquote>
+<p>Java是解释型语言还是编译型语言？</p>
+</blockquote>
+<p>Java是半解释半编译型语言。</p>
+<ol>
+<li>首先Java先编译成为字节码文件，也就是class文件，该文件无法被计算机直接执行，而是需要虚拟机来解释执行。</li>
+<li>在虚拟机进行解释执行的过程中，如果JVM发现某个方法或者代码块运行频繁的时候，会将其看作”热点代码”，然后通过即使编译（JIT）将”热点代码”直接编译成机器码，随后直接执行机器码即可。</li>
+<li>因此Java语言是半解释半编译型语言。正常的代码是进行解释执行的，JIT代码优化是通过编译执行的。</li>
+</ol>
+<blockquote>
+<p>如何防止反编译？</p>
+</blockquote>
+<ul>
+<li>隔离Java程序<ul>
+<li>让用户接触不到你的Class文件</li>
+</ul>
+</li>
+<li>对Class文件进行加密<ul>
+<li>提高破解难度</li>
+</ul>
+</li>
+<li>代码混淆<ul>
+<li>将代码转换成功能上等价，但是难于阅读和理解的形式</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>解释一下JIT编译</p>
+</blockquote>
+<ol>
+<li>首先Java先编译成为字节码文件，也就是class文件，该文件无法被计算机直接执行，而是需要虚拟机来解释执行。</li>
+<li>所以，JVM中内置了解释器，在运行时对字节码进行解释翻译成机器码，然后再执行。解释器的执行方式是一边翻译，一边执行，因此执行效率很低。为了解决这样的低效问题，HotSpot引入了JIT技术 (Just-In-Time)。</li>
+<li>有了JIT技术之后，JVM还是通过解释器进行解释执行。但是，当JVM发现某个方法或代码块运行时执行的特别频繁的时候，就会认为这是“热点代码”。然后JIT会把部分“热点代码”翻译成本地机器相关的机器码，并进行优化，然后再把翻译后的机器码缓存起来，以备下次使用。</li>
+</ol>
+<blockquote>
+<p>如何判断一段代码是不是热点代码？</p>
+</blockquote>
+<p>判断一段代码是不是热点代码有两种方法：</p>
+<ol>
+<li>基于采样的方式探测: 周期性检测各个线程的栈顶，发现某个方法经常出现在栈顶，就认为是热点方法。好处就是简单，缺点就是无法精确确认一个方法的热度。容易受线程阻塞或别的原因干扰热点探测。</li>
+<li>基于计数器的热点探测。采用这种方法的虚拟机会为每个方法，甚至是代码块建立计数器，统计方法的执行次数，某个方法超过阀值就认为是热点方法，触发JIT编译.</li>
+</ol>
+<p>在HotSpot虚拟机中使用的是第二种基于计数器的热点探测方法，因此它为每个方法准备了两个计数器: 方法调用计数器和回边计数器。</p>
+<ol>
+<li>方法计数器：就是记录一个方法被调用次数的计数器</li>
+<li>回边计数器：是记录方法中的for或者while的运行次数的计数器</li>
+</ol>
+<blockquote>
+<p>JIT的其他优化有哪些？</p>
+</blockquote>
+<p><strong>逃逸分析：</strong>当一个对象在方法中被定义后，它可能被外部方法所引用，例如作为调用参数传递到其他地方中，称为方法逃逸。进行逃逸分析可以进行以下优化：</p>
+<ul>
+<li><strong>同步省略</strong>。如果一个对象被发现只能从一个线程被访问到，那么对于这个对象的操作可以不考虑同步。</li>
+<li><strong>将堆分配转化为栈分配</strong>。如果一个对象没有逃逸到方法外的话，那么可以将对象进行栈分配。可以减少堆内存中对象的个数从而减少GC的次数。</li>
+<li><strong>分离对象或标量替换。</strong>如果经过逃逸分析，发现一个对象不会被外界访问的话，那么经过JIT优化，就会把这个对象拆解成若干个其中包含的成员变量来代替。这个过程就是标量替换。</li>
+</ul>
+<blockquote>
+<p>逃逸分析目前已经被采用了吗？</p>
+</blockquote>
+<p>没有。其根本原因就是无法保证逃逸分析的性能消耗一定能高于他的消耗。虽然经过逃逸分析可以做标量替换、栈上分配、和锁消除。但是逃逸分析自身也是需要进行一系列复杂的分析的，这其实也是一个相对耗时的过程。举一个个极端的例子，就是经过逃逸分析之后，发现没有一个对象是不逃逸的。那这个逃逸分析的过程就白白浪费掉。</p>
+<blockquote>
+<p>JIT 优化有哪些缺点？</p>
+</blockquote>
+<ol>
+<li>由于JIT优化是在运行期进行的，并且不是已进入代码就可以进行优化的，因为要判断哪些是热点代码。</li>
+<li>因此在JIT优化之前，所有请求都需要解释执行，这个过程相对较慢。</li>
+</ol>
+<blockquote>
+<p>有什么解决办法？</p>
+</blockquote>
+<ol>
+<li>提升JIT的优化效率</li>
+<li>降低瞬间请求量，进行预热。在应用刚刚启动的时候，先分配一个较小的流量，一次来触发JIT优化，之后再提升流量。</li>
+</ol>
+<blockquote>
+<p>为什么有了JIT还需要解释器？</p>
+</blockquote>
+<ol>
+<li><strong>在当前模式下，在Java虚拟器启动时，解释器可以首先发挥作用，而不必等待即时编译器全部编译完成后再执行，这样可以省去许多不必要的编译时间。随着时间的推移，编译器发挥作用，把越来越多的代码编译成本地代码，获得更高的执行效率。</strong></li>
+<li>同时，解释执行在编译器进行激进优化不成立的时候，作为编译器的“逃生门”（后备方案）。</li>
+</ol>
+<blockquote>
+<p>对JDK执行kill -9有什么影响？</p>
+</blockquote>
+<p>kill -9 命令会立刻关闭 JVM 进程。但是kill -9的语意是强制关闭，会导致在JVM中执行的服务立刻关闭，来不及收尾。如导致RPC服务没有从注册中心取消注册导致服务不可用，如导致事务执行一半直接终止等等。</p>
+<blockquote>
+<p>kill -9和kill -15有什么区别？</p>
+</blockquote>
+<p>kill命令默认的信号就是15，当使用kill -15时，系统会发送一个SIGTERM的信号给对应的程序。当程序接收到该信号后，具体要如何处理是自己可以决定的。这时候，应用程序可以选择:</p>
+<ul>
+<li>立即停止程序</li>
+<li>释放响应资源后停止程序</li>
+<li>忽略该信号，继续执行程序</li>
+</ul>
+<p>因为kill -15信号只是通知对应的进程要进行”安全、干净的退出”，程序接到信号之后，退出前一般会进行些”准备工作”，如资源释放、临时文件清理等等，如果准备工作做完了，再进行程序的终止。但是，如果在”准备工作”进行过程中，遇到阻塞或者其他问题导致无法成功，那么应用程序可以选择忽略该终止信号。</p>
+<p>这也就是为什么我们有的时候使用kill命令是没办法”杀死”应用的原因，因为默认的kill信号是 SIGTERM(15) ，而 SIGTERM(15) 的信号是可以被阻塞和忽略的。</p>
+<p>和 kill -15 相比， ki11 -9更加强硬，系统会发出SIGKILL信号，他要求接收到该信号的程序应该立即结束运行，不能被阻塞或者忽略。</p>
+<p>所以，相比于 ki11 -15 命令， ki11 -9 在执行时，应用程序是没有时间进行”准备工作”的，所以这通常会带来一些副作用，数据丢失或者终端无法恢复到正常状态等。</p>
+<blockquote>
+<p>正常重启流程是怎样的？</p>
+</blockquote>
+<ol>
+<li>先将堆栈的文件dump下来</li>
+<li>重启机器，如果重启失败，则采用kill -15命令</li>
+<li>事后分析dump文件</li>
+</ol>
+<blockquote>
+<p>JVM 运行时内存区域是怎样的？</p>
+</blockquote>
+</div><div class="article-licensing box"><div class="licensing-title"><p>深入理解 Java 原理之 JVM</p><p><a href="https://spy955.github.io/2023/08/28/Java八股之JVM/">https://spy955.github.io/2023/08/28/Java八股之JVM/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>Sun Peiyuan</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2023-08-28</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2023-08-28</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icons" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="icon fab fa-creative-commons"></i></a><a class="icons" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="icon fab fa-creative-commons-by"></i></a><a class="icons" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="icon fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/Interview-preparation/">Interview preparation</a></div><!--!--></article></div><div class="card"><div class="card-content"><h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3><div class="buttons is-centered"><a class="button donate" href="/" target="_blank" rel="noopener" data-type="afdian"><span class="icon is-small"><i class="fas fa-charging-station"></i></span><span>爱发电</span></a><a class="button donate" data-type="alipay"><span class="icon is-small"><i class="fab fa-alipay"></i></span><span>支付宝</span><span class="qrcode"><img src="/" alt="支付宝"></span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="buymeacoffee"><span class="icon is-small"><i class="fas fa-coffee"></i></span><span>送我杯咖啡</span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="patreon"><span class="icon is-small"><i class="fab fa-patreon"></i></span><span>Patreon</span></a></div></div></div><nav class="post-navigation mt-4 level is-mobile"><div class="level-start"><a class="article-nav-prev level level-item link-muted" href="/2023/08/29/Java%E5%85%AB%E8%82%A1%E4%B9%8BSSM/"><i class="level-item fas fa-chevron-left"></i><span class="level-item">深入理解 Java 原理之SSM</span></a></div><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2023/08/26/Java%E5%85%AB%E8%82%A1%E4%B9%8B%E9%9B%86%E5%90%88/"><span class="level-item">深入 Java 原理之集合篇</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><div class="card"><div class="card-content"><h3 class="title is-5">评论</h3><div id="disqus_thread"><noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript></div><script>var disqus_config = function () {
+            this.page.url = 'https://spy955.github.io/2023/08/28/Java%E5%85%AB%E8%82%A1%E4%B9%8BJVM/';
+            this.page.identifier = '2023/08/28/Java八股之JVM/';
+        };
+        (function() {
+            var d = document, s = d.createElement('script');  
+            s.src = '//' + 'SPY' + '.disqus.com/embed.js';
+            s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+        })();</script></div></div></div><div class="column column-left is-4-tablet is-4-desktop is-4-widescreen  order-1"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar" src="/img/hutao.jpg" alt="SPY"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">SPY</p><p class="is-size-6 is-block">一个热爱并追求技术的小白</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>上海</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">18</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">3</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">10</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/Spy955" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile is-multiline"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/Spy955"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Facebook" href="https://facebook.com"><i class="fab fa-facebook"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Twitter" href="https://twitter.com"><i class="fab fa-twitter"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Dribbble" href="https://dribbble.com"><i class="fab fa-dribbble"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="RSS" href="/"><i class="fas fa-rss"></i></a></div></div></div><!--!--><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/Algorithm/"><span class="level-start"><span class="level-item">Algorithm</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/Java/"><span class="level-start"><span class="level-item">Java</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/categories/MySQL/"><span class="level-start"><span class="level-item">MySQL</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="recent-posts"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-08-29T01:31:58.000Z">2023-08-29</time></p><p class="title"><a href="/2023/08/29/Java%E5%85%AB%E8%82%A1%E4%B9%8BSSM/">深入理解 Java 原理之SSM</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-08-28T01:20:05.000Z">2023-08-28</time></p><p class="title"><a href="/2023/08/28/Java%E5%85%AB%E8%82%A1%E4%B9%8BJVM/">深入理解 Java 原理之 JVM</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-08-26T08:28:56.000Z">2023-08-26</time></p><p class="title"><a href="/2023/08/26/Java%E5%85%AB%E8%82%A1%E4%B9%8B%E9%9B%86%E5%90%88/">深入 Java 原理之集合篇</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-08-24T09:40:47.000Z">2023-08-24</time></p><p class="title"><a href="/2023/08/24/JavaSE/">深入学习 Java 原理之基础篇</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-08-16T06:11:29.000Z">2023-08-16</time></p><p class="title"><a href="/2023/08/16/Data-Structure/">数据结构</a></p></div></article></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2023/"><span class="level-start"><span class="level-item">2023</span></span><span class="level-end"><span class="level-item tag">12</span></span></a></li><li><a class="level is-mobile" href="/archives/2022/"><span class="level-start"><span class="level-item">2022</span></span><span class="level-end"><span class="level-item tag">6</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/Algorithm/"><span class="tag">Algorithm</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Computer-Basics/"><span class="tag">Computer Basics</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Data-Structure/"><span class="tag">Data Structure</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Interview-preparation/"><span class="tag">Interview preparation</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Java/"><span class="tag">Java</span><span class="tag">7</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Java-Project/"><span class="tag">Java_Project</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/MySQL/"><span class="tag">MySQL</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/SQL/"><span class="tag">SQL</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Web/"><span class="tag">Web</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/web/"><span class="tag">web</span><span class="tag">1</span></a></div></div></div></div></div><div class="card widget" data-type="subscribe-email"><div class="card-content"><div class="menu"><h3 class="menu-label">订阅更新</h3><form action="https://feedburner.google.com/fb/a/mailverify" method="post" target="popupwindow" onsubmit="window.open(&#039;https://feedburner.google.com/fb/a/mailverify?uri=&#039;,&#039;popupwindow&#039;,&#039;scrollbars=yes,width=550,height=520&#039;);return true"><input type="hidden" value="" name="uri"><input type="hidden" name="loc" value="en_US"><div class="field has-addons"><div class="control has-icons-left is-expanded"><input class="input" name="email" type="email" placeholder="Email"><span class="icon is-small is-left"><i class="fas fa-envelope"></i></span></div><div class="control"><input class="button" type="submit" value="订阅"></div></div></form></div></div></div></div><!--!--></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img src="/img/favicon.png" alt="SPY 的博客" height="28"></a><p class="is-size-7"><span>&copy; 2023 Sun Peiyuan</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a></p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/Spy955"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script><script>moment.locale("zh-cn");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.js" defer></script><script>window.addEventListener("load", () => {
+      window.cookieconsent.initialise({
+        type: "info",
+        theme: "edgeless",
+        static: false,
+        position: "bottom-left",
+        content: {
+          message: "此网站使用Cookie来改善您的体验。",
+          dismiss: "知道了！",
+          allow: "允许使用Cookie",
+          deny: "拒绝",
+          link: "了解更多",
+          policy: "Cookie政策",
+          href: "https://www.cookiesandyou.com/",
+        },
+        palette: {
+          popup: {
+            background: "#edeff5",
+            text: "#838391"
+          },
+          button: {
+            background: "#4b81e8"
+          },
+        },
+      });
+    });</script><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><!--!--><!--!--><!--!--><script src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script src="/js/insight.js" defer></script><script>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/wanko.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body></html>

@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>深入理解 Java 原理之SSM - SPY 的博客</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="SPY 的博客"><meta name="msapplication-TileImage" content="/img/favicon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SPY 的博客"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="description" content="本篇内容：  学习 Spring、SpringMVC、MyBatis 相关理论基础以及底层实现 学习相关面试常见题目，掌握问答精髓 回顾当天所学知识，加深印象"><meta property="og:type" content="blog"><meta property="og:title" content="深入理解 Java 原理之SSM"><meta property="og:url" content="https://spy955.github.io/2023/08/29/Java%E5%85%AB%E8%82%A1%E4%B9%8BSSM/"><meta property="og:site_name" content="SPY 的博客"><meta property="og:description" content="本篇内容：  学习 Spring、SpringMVC、MyBatis 相关理论基础以及底层实现 学习相关面试常见题目，掌握问答精髓 回顾当天所学知识，加深印象"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="https://images.xiaozhuanlan.com/photo/2019/b5d264565657a5395c2781081a7483e1.jpg"><meta property="og:image" content="https://oss.javaguide.cn/github/javaguide/system-design/framework/spring/de6d2b213f112297298f3e223bf08f28.png"><meta property="article:published_time" content="2023-08-29T01:31:58.000Z"><meta property="article:modified_time" content="2023-08-31T09:28:45.793Z"><meta property="article:author" content="Sun Peiyuan"><meta property="article:tag" content="Interview preparation"><meta property="twitter:card" content="summary"><meta property="twitter:image:src" content="https://images.xiaozhuanlan.com/photo/2019/b5d264565657a5395c2781081a7483e1.jpg"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://spy955.github.io/2023/08/29/Java%E5%85%AB%E8%82%A1%E4%B9%8BSSM/"},"headline":"深入理解 Java 原理之SSM","image":["https://images.xiaozhuanlan.com/photo/2019/b5d264565657a5395c2781081a7483e1.jpg","https://oss.javaguide.cn/github/javaguide/system-design/framework/spring/de6d2b213f112297298f3e223bf08f28.png"],"datePublished":"2023-08-29T01:31:58.000Z","dateModified":"2023-08-31T09:28:45.793Z","author":{"@type":"Person","name":"Sun Peiyuan"},"publisher":{"@type":"Organization","name":"SPY 的博客","logo":{"@type":"ImageObject","url":"https://spy955.github.io/img/favicon.png"}},"description":"本篇内容：  学习 Spring、SpringMVC、MyBatis 相关理论基础以及底层实现 学习相关面试常见题目，掌握问答精髓 回顾当天所学知识，加深印象"}</script><link rel="canonical" href="https://spy955.github.io/2023/08/29/Java%E5%85%AB%E8%82%A1%E4%B9%8BSSM/"><link rel="icon" href="/img/favicon.png"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0/css/all.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;600&amp;family=Source+Code+Pro"><link rel="stylesheet" href="/css/default.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><!--!--><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css"><!--!--><!--!--><style>.pace{-webkit-pointer-events:none;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.pace-inactive{display:none}.pace .pace-progress{background:#3273dc;position:fixed;z-index:2000;top:0;right:100%;width:100%;height:2px}</style><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><!--!--><!--!--><!-- hexo injector head_end start --><script>
+  (function () {
+      function switchTab() {
+          if (!location.hash) {
+            return;
+          }
+
+          const id = '#' + CSS.escape(location.hash.substring(1));
+          const $tabMenu = document.querySelector(`.tabs a[href="${id}"]`);
+          if (!$tabMenu) {
+            return;
+          }
+
+          const $tabMenuContainer = $tabMenu.parentElement.parentElement;
+          Array.from($tabMenuContainer.children).forEach($menu => $menu.classList.remove('is-active'));
+          Array.from($tabMenuContainer.querySelectorAll('a'))
+              .map($menu => document.getElementById($menu.getAttribute("href").substring(1)))
+              .forEach($content => $content.classList.add('is-hidden'));
+
+          if ($tabMenu) {
+              $tabMenu.parentElement.classList.add('is-active');
+          }
+          const $activeTab = document.querySelector(id);
+          if ($activeTab) {
+              $activeTab.classList.remove('is-hidden');
+          }
+      }
+      switchTab();
+      window.addEventListener('hashchange', switchTab, false);
+  })();
+  </script><!-- hexo injector head_end end --><meta name="generator" content="Hexo 6.3.0"></head><body class="is-2-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/favicon.png" alt="SPY 的博客" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/Spy955"><i class="fab fa-github"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-8-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2023-08-29T01:31:58.000Z" title="2023/8/29 09:31:58">2023-08-29</time>发表</span><span class="level-item"><time dateTime="2023-08-31T09:28:45.793Z" title="2023/8/31 17:28:45">2023-08-31</time>更新</span><span class="level-item">1 小时读完 (大约10113个字)</span></div></div><h1 class="title is-3 is-size-4-mobile">深入理解 Java 原理之SSM</h1><div class="content"><p><strong>本篇内容：</strong></p>
+<ol>
+<li>学习 Spring、SpringMVC、MyBatis 相关理论基础以及底层实现</li>
+<li>学习相关面试常见题目，掌握问答精髓</li>
+<li>回顾当天所学知识，加深印象</li>
+</ol>
+<span id="more"></span>
+
+<h2 id="Spring-常见经典问答"><a href="#Spring-常见经典问答" class="headerlink" title="Spring 常见经典问答"></a>Spring 常见经典问答</h2><blockquote>
+<p>什么是 Spring 框架？</p>
+</blockquote>
+<p>Spring 是一款开源的轻量级 Java 开发框架，旨在提高开发人员的开发效率以及系统的可维护性。</p>
+<p>我们一般说 Spring 框架指的都是 Spring Framework，它是很多模块的集合，使用这些模块可以很方便地协助我们进行开发，比如说 Spring 支持 IoC、 AOP，并且可以很方便地对数据库进行访问、可以很方便地集成第三方组件（电子邮件，任务，调度，缓存等等）、对单元测试支持比较好、支持 RESTful Java 应用程序的开发。</p>
+<blockquote>
+<p>Spring 都有哪些主要模块？</p>
+</blockquote>
+<p>Core Container、Data Access&#x2F;Integration、AOP、Spring Web、Spring Test等模块。</p>
+<blockquote>
+<p>Spring、SpringMVC、SpringBoot 三者有什么区别？</p>
+</blockquote>
+<ol>
+<li>Spring 包含了多个功能模块，其中最重要的是 Spring-Core（主要提供 IoC 依赖注入功能的支持） 模块， Spring 中的其他模块（比如 Spring MVC）的功能实现基本都需要依赖于该模块。</li>
+<li>Spring MVC 是 Spring 中的一个很重要的模块，主要赋予 Spring 快速构建 MVC 架构的 Web 程序的能力。MVC 是模型(Model)、视图(View)、控制器(Controller)的简写，其核心思想是通过将业务逻辑、数据、显示分离来组织代码。</li>
+<li>使用 Spring 进行开发各种配置过于麻烦比如开启某些 Spring 特性时，需要用 XML 或 Java 进行显式配置。于是，有了 SpringBoot。Spring Boot 主要是为了简化 Spring 开发，省略了许多配置文件。</li>
+</ol>
+<blockquote>
+<p>简述对 IOC 的理解</p>
+</blockquote>
+<p>IOC，也就是Inversion of control，控制反转&#x2F;反转控制，它是一种思想不是一个技术实现。其思想就是将原本在程序中手动创建对象的控制权，交由 Spring 框架来管理。</p>
+<p>例如：现有类 A 依赖于类 B</p>
+<ul>
+<li><strong>传统的开发方式</strong>：往往是在类 A 中手动通过 new 关键字来 new 一个 B 的对象出来</li>
+<li><strong>使用 IoC 思想的开发方式</strong>：不通过 new 关键字来创建对象，而是通过 Spring 框架中的 IoC 容器来帮助我们实例化对象。我们需要哪个对象，直接从 IoC 容器里面获取即可。</li>
+</ul>
+<p>也就是说，如果没有 Spring 的话，我们想要使用的对象，需要我们自己创建，而有了 Spring 的 IOC 之后，对象由 IOC 容器创建并管理，在想要使用的时候从容器中获取即可。</p>
+<blockquote>
+<p>IOC 有什么优点？</p>
+</blockquote>
+<ol>
+<li><p>将对象之间的相互依赖关系交给 IoC 容器来管理，并由 IoC 容器完成对象的注入。这样可以很大程度上简化应用的开发，把应用从复杂的依赖关系中解放出来。 IoC 容器就像是一个工厂一样，当我们需要创建一个对象的时候，只需要配置好配置文件和注解即可，完全不用考虑对象是如何被创建出来的。</p>
+</li>
+<li><p>同样的，如果两个对象使用同一个Bean的话，也不需要创建多个Bean导致资源的浪费。</p>
+<p>通俗易懂的帖子：<a target="_blank" rel="noopener" href="https://www.zhihu.com/question/23277575/answer/169698662">https://www.zhihu.com/question/23277575/answer/169698662</a></p>
+</li>
+</ol>
+<blockquote>
+<p>IOC 如何实现的？</p>
+</blockquote>
+<ol>
+<li>从配置元数据中获取要的业务POJO (这里的配置元数据包括xml，注解，configuration类等）</li>
+<li>将业务POJO形成BeanDefinition注入到Spring Container中</li>
+<li>使用方通过ApplicationContext从Spring Container直接获取即可。</li>
+</ol>
+<blockquote>
+<p>什么是 Spring Bean？</p>
+</blockquote>
+<p>简单来说，Bean 代指的就是那些被 IoC 容器所管理的对象。</p>
+<p>我们需要告诉 IoC 容器帮助我们管理哪些对象，这个是通过配置元数据来定义的。配置元数据可以是 XML 文件、注解或者 Java 配置类。</p>
+<blockquote>
+<p>将一个类设置为 Bean 的注解有哪些？</p>
+</blockquote>
+<ul>
+<li><code>@Component</code>：通用的注解，可标注任意类为 <code>Spring</code> 组件。如果一个 Bean 不知道属于哪个层，可以使用<code>@Component</code> 注解标注。</li>
+<li><code>@Repository</code> : 对应持久层即 Dao 层，主要用于数据库相关操作。</li>
+<li><code>@Service</code> : 对应服务层，主要涉及一些复杂的逻辑，需要用到 Dao 层。</li>
+<li><code>@Controller</code> : 对应 Spring MVC 控制层，主要用于接受用户请求并调用 <code>Service</code> 层返回数据给前端页面。</li>
+</ul>
+<blockquote>
+<p>注入Bean的注解有哪些？</p>
+</blockquote>
+<p>@Autowired、@Resource</p>
+<blockquote>
+<p>二者有什么区别？</p>
+</blockquote>
+<ol>
+<li><code>@Autowired</code> 是 Spring 提供的注解，<code>@Resource</code> 是 JDK 提供的注解。假设系统容器从 Spring 迁移到其他IOC容器中，JDK支持的不需要修改代码。</li>
+<li><code>Autowired</code> 默认的注入方式为<code>byType</code>（根据类型进行匹配），<code>@Resource</code>默认注入方式为 <code>byName</code>（根据名称进行匹配）。</li>
+<li>当一个接口存在多个实现类的情况下，<code>@Autowired</code> 和<code>@Resource</code>都需要通过名称才能正确匹配到对应的 Bean。<code>Autowired</code> 可以通过 <code>@Qualifier</code> 注解来显式指定名称，<code>@Resource</code>可以通过 <code>name</code> 属性来显式指定名称。</li>
+<li><code>@Autowired</code> 可以作用在构造器、字段、setter 方法上；<code>@Resource</code>只可以用于field、setter方法上。</li>
+</ol>
+<blockquote>
+<p>Bean 的作用域有哪些？</p>
+</blockquote>
+<ul>
+<li><strong>singleton</strong> : IoC 容器中只有唯一的 bean 实例。Spring 中的 bean 默认都是单例的，是对单例设计模式的应用。</li>
+<li><strong>prototype</strong> : 每次获取都会创建一个新的 bean 实例。也就是说，连续 <code>getBean()</code> 两次，得到的是不同的 Bean 实例。</li>
+<li><strong>request</strong> （仅 Web 应用可用）: 每一次 HTTP 请求都会产生一个新的 bean（请求 bean），该 bean 仅在当前 HTTP request 内有效。</li>
+<li><strong>session</strong> （仅 Web 应用可用） : 每一次来自新 session 的 HTTP 请求都会产生一个新的 bean（会话 bean），该 bean 仅在当前 HTTP session 内有效。</li>
+<li><strong>application&#x2F;global-session</strong> （仅 Web 应用可用）：每个 Web 应用在启动时创建一个 Bean（应用 Bean），该 bean 仅在当前应用启动时间内有效。</li>
+<li><strong>websocket</strong> （仅 Web 应用可用）：每一次 WebSocket 会话产生一个新的 bean。</li>
+</ul>
+<blockquote>
+<p>Bean是线程安全的吗？</p>
+</blockquote>
+<p>当 Bean 的作用域为 prototype 的时候，每次都会创建一个新的Bean实例，因此不存在线程安全问题。但是大多数情况下，Bean 的作用域为 singleton，在这种情况下，IoC 容器中只有唯一的 bean 实例，可能会存在资源竞争问题（取决于 Bean 是否有状态）。如果这个 bean 是有状态的话，那就存在线程安全问题（有状态 Bean 是指包含可变的成员变量的对象）。大多数情况下，如 Dao、Service 是不存在可变的成员变量的，因此不存在线程安全问题。如果遇到线程不安全的情况，可以采取以下措施：</p>
+<ol>
+<li>在 Bean 中尽量避免定义可变的成员变量。</li>
+<li>在类中定义一个 <code>ThreadLocal</code> 成员变量，将需要的可变成员变量保存在 <code>ThreadLocal</code> 中（推荐的一种方式）。</li>
+</ol>
+<blockquote>
+<p>Bean的生命周期</p>
+</blockquote>
+<ol>
+<li><p>Bean 容器找到配置文件中 Spring Bean 的定义。</p>
+</li>
+<li><p>Bean 容器利用 Java Reflection API 创建一个 Bean 的实例。</p>
+</li>
+<li><p>如果涉及到一些属性值 利用 <code>set()</code>方法设置一些属性值。</p>
+</li>
+<li><p>检查 Aware 相关接口并且设置相关依赖</p>
+<ol>
+<li>如果 Bean 实现了 <code>BeanNameAware</code> 接口，调用 <code>setBeanName()</code>方法，传入 Bean 的名字。</li>
+<li>如果 Bean 实现了 <code>BeanClassLoaderAware</code> 接口，调用 <code>setBeanClassLoader()</code>方法，传入 <code>ClassLoader</code>对象的实例。</li>
+<li>如果 Bean 实现了 <code>BeanFactoryAware</code> 接口，调用 <code>setBeanFactory()</code>方法，传入 <code>BeanFactory</code>对象的实例。</li>
+<li>与上面的类似，如果实现了其他 <code>*.Aware</code>接口，就调用相应的方法。</li>
+</ol>
+</li>
+<li><p>如果有和加载这个 Bean 的 Spring 容器相关的 <code>BeanPostProcessor</code> 对象，执行<code>postProcessBeforeInitialization()</code> 方法</p>
+</li>
+<li><p>如果 Bean 实现了<code>InitializingBean</code>接口，执行<code>afterPropertiesSet()</code>方法。</p>
+</li>
+<li><p>如果 Bean 在配置文件中的定义包含 init-method 属性，执行指定的方法。</p>
+</li>
+<li><p>如果有和加载这个 Bean 的 Spring 容器相关的 <code>BeanPostProcessor</code> 对象，执行<code>postProcessAfterInitialization()</code> 方法</p>
+</li>
+<li><p>当要销毁 Bean 的时候，如果 Bean 实现了 <code>DisposableBean</code> 接口，执行 <code>destroy()</code> 方法。</p>
+</li>
+<li><p>当要销毁 Bean 的时候，如果 Bean 在配置文件中的定义包含 destroy-method 属性，执行指定的方法。</p>
+<p><img src="https://images.xiaozhuanlan.com/photo/2019/b5d264565657a5395c2781081a7483e1.jpg" alt="Spring Bean 生命周期"></p>
+</li>
+</ol>
+<blockquote>
+<p>Spring AOP 的理解</p>
+</blockquote>
+<p>AOP(Aspect-Oriented Programming:面向切面编程)能够将那些与业务无关，却被业务模块所共同调用的逻辑或责任（例如事务处理、日志管理、权限控制等）封装起来，便于减少系统的重复代码，降低模块间的耦合度，并有利于未来的可拓展性和可维护性。</p>
+<blockquote>
+<p>多个切面的执行顺序如何实现？</p>
+</blockquote>
+<p>通常使用<code>@Order</code> 注解直接定义切面顺序，值越小越先执行。</p>
+<blockquote>
+<p>Spring 框架中实现了哪些设计模式？</p>
+</blockquote>
+<ul>
+<li><strong>工厂设计模式</strong> : Spring 使用工厂模式通过 <code>BeanFactory</code>、<code>ApplicationContext</code> 创建 bean 对象。</li>
+<li><strong>代理设计模式</strong> : Spring AOP 功能的实现。</li>
+<li><strong>单例设计模式</strong> : Spring 中的 Bean 默认都是单例的。</li>
+<li><strong>模板方法模式</strong> : Spring 中 <code>jdbcTemplate</code>、<code>hibernateTemplate</code> 等以 Template 结尾的对数据库操作的类，它们就使用到了模板模式。</li>
+<li><strong>包装器设计模式</strong> : 我们的项目需要连接多个数据库，而且不同的客户在每次访问中根据需要会去访问不同的数据库。这种模式让我们可以根据客户的需求能够动态切换不同的数据源。</li>
+<li><strong>观察者模式:</strong> Spring 事件驱动模型就是观察者模式很经典的一个应用。</li>
+<li><strong>适配器模式</strong> : Spring AOP 的增强或通知(Advice)使用到了适配器模式、spring MVC 中也是用到了适配器模式适配<code>Controller</code>。</li>
+</ul>
+<h2 id="Spring-事务"><a href="#Spring-事务" class="headerlink" title="Spring 事务"></a>Spring 事务</h2><blockquote>
+<p>什么是事务？</p>
+</blockquote>
+<p>事务是指逻辑上的一组操作，要么都执行，要么全部不执行。</p>
+<blockquote>
+<p>事务的特性（ACID）简单叙述一下</p>
+</blockquote>
+<ul>
+<li><strong>原子性</strong>（<code>Atomicity</code>）：事务是最小的执行单位，不允许分割。事务的原子性确保动作要么全部完成，要么完全不起作用；</li>
+<li><strong>一致性</strong>（<code>Consistency</code>）：执行事务前后，数据保持一致，例如转账业务中，无论事务是否成功，转账者和收款人的总额应该是不变的；</li>
+<li><strong>隔离性</strong>（<code>Isolation</code>）：并发访问数据库时，一个用户的事务不被其他事务所干扰，各并发事务之间数据库是独立的；</li>
+<li><strong>持久性</strong>（<code>Durability</code>）：一个事务被提交之后。它对数据库中数据的改变是持久的，即使数据库发生故障也不应该对其有任何影响。</li>
+</ul>
+<p>AID是手段，C是目的。</p>
+<blockquote>
+<p>Spring 支持事务有哪些方式？</p>
+</blockquote>
+<ol>
+<li>编程式事务。通过 <code>TransactionTemplate</code>或者<code>TransactionManager</code>手动管理事务。</li>
+<li>声明式事务。使用 <code>@Transactional</code>注解进行事务管理。</li>
+</ol>
+<blockquote>
+<p>Spring 事务管理有哪些接口？</p>
+</blockquote>
+<p>**<code>PlatformTransactionManager</code>**：（平台）事务管理器，Spring 事务策略的核心。</p>
+<p>**<code>TransactionDefinition</code>**：事务定义信息(事务隔离级别、传播行为、超时、只读、回滚规则)。</p>
+<p>**<code>TransactionStatus</code>**：事务运行状态。</p>
+<blockquote>
+<p><code>@Transactional</code> 的作用范围</p>
+</blockquote>
+<ol>
+<li><strong>方法</strong>：推荐将注解使用于方法上，不过需要注意的是：<strong>该注解只能应用到 public 方法上，否则不生效。</strong></li>
+<li><strong>类</strong>：如果这个注解使用在类上的话，表明该注解对该类中所有的 public 方法都生效。</li>
+<li><strong>接口</strong>：不推荐在接口上使用。</li>
+</ol>
+<blockquote>
+<p><code>@Transactional</code> 的原理解析</p>
+</blockquote>
+<p><code>@Transactional</code> 的工作机制是基于 AOP 实现的，AOP 又是使用动态代理实现的。如果一个类或者一个类中的 public 方法上被标注<code>@Transactional</code> 注解的话，Spring 容器就会在启动的时候为其创建一个代理类，在调用被<code>@Transactional</code> 注解的 public 方法的时候，实际调用的是，<code>TransactionInterceptor</code> 类中的 <code>invoke()</code>方法。这个方法的作用就是在目标方法之前开启事务，方法执行过程中如果遇到异常的时候回滚事务，方法调用完成之后提交事务。</p>
+<blockquote>
+<p>事务隔离级别相关内容见 <code>MySQL</code> 相关总结</p>
+</blockquote>
+<blockquote>
+<p>Transactional(rollbackFor &#x3D; Exception.class)注解了解吗？</p>
+</blockquote>
+<p><code>Exception</code> 分为运行时异常 <code>RuntimeException</code> 和非运行时异常。事务管理对于企业应用来说是至关重要的，即使出现异常情况，它也可以保证数据的一致性。当 <code>@Transactional</code> 注解作用于类上时，该类的所有 public 方法将都具有该类型的事务属性，同时，我们也可以在方法级别使用该标注来覆盖类级别的定义。如果类或者方法加了这个注解，那么这个类里面的方法抛出异常，就会回滚，数据库里面的数据也会回滚。</p>
+<p>在 <code>@Transactional</code> 注解中如果不配置<code>rollbackFor</code>属性,那么事务只会在遇到<code>RuntimeException</code>的时候才会回滚，加上 <code>rollbackFor=Exception.class</code>,可以让事务在遇到非运行时异常时也回滚。</p>
+<blockquote>
+<p>简单叙述一下 <code>Spring AOP</code> 的自调用问题</p>
+</blockquote>
+<p>当一个方法被标记了<code>@Transactional</code> 注解的时候，Spring 事务管理器只会在被其他类方法调用的时候生效，而不会在一个类中方法调用生效。即在如下情况下不会生效：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyService</span> &#123;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">method1</span><span class="params">()</span> &#123;</span><br><span class="line">     method2();</span><br><span class="line">     <span class="comment">//......</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">@Transactional</span></span><br><span class="line"> <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">method2</span><span class="params">()</span> &#123;</span><br><span class="line">     <span class="comment">//......</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>@Transactional</code> 的使用注意事项总结</p>
+</blockquote>
+<ul>
+<li><code>@Transactional</code> 注解只有作用到 public 方法上事务才生效，不推荐在接口上使用；</li>
+<li>避免同一个类中调用 <code>@Transactional</code> 注解的方法，这样会导致事务失效；</li>
+<li>正确的设置 <code>@Transactional</code> 的 <code>rollbackFor</code> 和 <code>propagation</code> 属性，否则事务可能会回滚失败;</li>
+<li>被 <code>@Transactional</code> 注解的方法所在的类必须被 Spring 管理，否则不生效；</li>
+<li>底层使用的数据库必须支持事务机制，否则不生效；</li>
+</ul>
+<h2 id="Spring-MVC-常见经典问答"><a href="#Spring-MVC-常见经典问答" class="headerlink" title="Spring MVC 常见经典问答"></a>Spring MVC 常见经典问答</h2><blockquote>
+<p>说说自己对于 Spring MVC 了解?</p>
+</blockquote>
+<p>MVC 是一种设计模式，是模型(Model)、视图(View)、控制器(Controller)的简写，其核心思想是通过将业务逻辑、数据、显示分离来组织代码。Spring MVC 是一款很优秀的 MVC 框架。Spring MVC 可以帮助我们进行更简洁的 Web 层的开发，并且它天生与 Spring 框架集成。Spring MVC 下我们一般把后端项目分为 Service 层（处理业务）、Dao 层（数据库操作）、Entity 层（实体类）、Controller 层(控制层，返回数据给前台页面)。</p>
+<blockquote>
+<p>Spring MVC 的核心组件有哪些？</p>
+</blockquote>
+<ul>
+<li><strong><code>DispatcherServlet</code><strong>：</strong>核心的中央处理器</strong>，负责接收请求、分发，并给予客户端响应。</li>
+<li><strong><code>HandlerMapping</code><strong>：</strong>处理器映射器</strong>，根据 uri 去匹配查找能处理的 <code>Handler</code> ，并会将请求涉及到的拦截器和 <code>Handler</code> 一起封装。</li>
+<li><strong><code>HandlerAdapter</code><strong>：</strong>处理器适配器</strong>，根据 <code>HandlerMapping</code> 找到的 <code>Handler</code> ，适配执行对应的 <code>Handler</code>；</li>
+<li><strong><code>Handler</code><strong>：</strong>请求处理器</strong>，处理实际请求的处理器。</li>
+<li><strong><code>ViewResolver</code><strong>：</strong>视图解析器</strong>，根据 <code>Handler</code> 返回的逻辑视图 &#x2F; 视图，解析并渲染真正的视图，并传递给 <code>DispatcherServlet</code> 响应客户端</li>
+</ul>
+<blockquote>
+<p>Spring MVC 的底层原理如何实现的？</p>
+</blockquote>
+<p><img src="https://oss.javaguide.cn/github/javaguide/system-design/framework/spring/de6d2b213f112297298f3e223bf08f28.png" alt="img"></p>
+<ol>
+<li>客户端（浏览器）发送请求， <code>DispatcherServlet</code>拦截请求。</li>
+<li><code>DispatcherServlet</code> 根据请求信息调用 <code>HandlerMapping</code> 。<code>HandlerMapping</code> 根据 uri 去匹配查找能处理的 <code>Handler</code>（也就是我们平常说的 <code>Controller</code> 控制器） ，并会将请求涉及到的拦截器和 <code>Handler</code> 一起封装。</li>
+<li><code>DispatcherServlet</code> 调用 <code>HandlerAdapter</code>适配器执行 <code>Handler</code> 。</li>
+<li><code>Handler</code> 完成对用户请求的处理后，会返回一个 <code>ModelAndView</code> 对象给<code>DispatcherServlet</code>，<code>ModelAndView</code> 顾名思义，包含了数据模型以及相应的视图的信息。<code>Model</code> 是返回的数据对象，<code>View</code> 是个逻辑上的 <code>View</code>。</li>
+<li><code>ViewResolver</code> 会根据逻辑 <code>View</code> 查找实际的 <code>View</code>。</li>
+<li><code>DispaterServlet</code> 把返回的 <code>Model</code> 传给 <code>View</code>（视图渲染）。</li>
+<li>把 <code>View</code> 返回给请求者（浏览器）</li>
+</ol>
+<blockquote>
+<p>统一异常处理如何实现？</p>
+</blockquote>
+<p>使用注解的方式统一异常处理，具体会使用到 <code>@ControllerAdvice</code> + <code>@ExceptionHandler</code> 这两个注解。这种异常处理方式下，会给所有或者指定的 <code>Controller</code> 织入异常处理的逻辑（AOP），当 <code>Controller</code> 中的方法抛出异常的时候，由被<code>@ExceptionHandler</code> 注解修饰的方法进行处理。<code>ExceptionHandlerMethodResolver</code> 中 <code>getMappedMethod</code> 方法决定了异常具体被哪个被 <code>@ExceptionHandler</code> 注解修饰的方法处理异常。<code>getMappedMethod()</code>会首先找到可以匹配处理异常的所有方法信息，然后对其进行从小到大的排序，最后取最小的那一个匹配的方法(即匹配度最高的那个)。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@ControllerAdvice</span></span><br><span class="line"><span class="meta">@ResponseBody</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">GlobalExceptionHandler</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@ExceptionHandler(BaseException.class)</span></span><br><span class="line">    <span class="keyword">public</span> ResponseEntity&lt;?&gt; handleAppException(BaseException ex, HttpServletRequest request) &#123;</span><br><span class="line">      <span class="comment">//......</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@ExceptionHandler(value = ResourceNotFoundException.class)</span></span><br><span class="line">    <span class="keyword">public</span> ResponseEntity&lt;ErrorReponse&gt; <span class="title function_">handleResourceNotFoundException</span><span class="params">(ResourceNotFoundException ex, HttpServletRequest request)</span> &#123;</span><br><span class="line">      <span class="comment">//......</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="MyBatis-常见经典问答"><a href="#MyBatis-常见经典问答" class="headerlink" title="MyBatis 常见经典问答"></a>MyBatis 常见经典问答</h2><blockquote>
+<p>#{} 和 ${} 的区别是什么？</p>
+</blockquote>
+<ul>
+<li><code>$&#123;&#125;</code>是 <strong>Properties 文件中的变量占位符</strong>，它可以用于标签属性值和 sql 内部，属于静态文本替换，比如${driver}会被静态替换为<code>com.mysql.jdbc.Driver</code>。</li>
+<li><code>#&#123;&#125;</code>是 <strong>sql 的参数占位符</strong>，MyBatis 会将 sql 中的<code>#&#123;&#125;</code>替换为? 号，在 sql 执行前会使用 PreparedStatement 的参数设置方法，按序给 sql 的? 号占位符设置参数值。如果在sql语句中使用 <code>$&#123;id&#125;</code>，则翻译成sql语句之后，id 带有 “”，即where id &#x3D; “id”。</li>
+</ul>
+<blockquote>
+<p>xml 映射文件中，除了常见的 select、insert、update、delete 标签之外，还有哪些标签？</p>
+</blockquote>
+<p><code>&lt;resultMap&gt;</code>、 <code>&lt;parameterMap&gt;</code>、 <code>&lt;sql&gt;</code>、 <code>&lt;include&gt;</code>、 <code>&lt;selectKey&gt;</code> ，加上动态 sql 的 9 个标签， <code>trim|where|set|foreach|if|choose|when|otherwise|bind</code> 等，其中 <code>&lt;sql&gt;</code> 为 sql 片段标签，通过 <code>&lt;include&gt;</code> 标签引入 sql 片段， <code>&lt;selectKey&gt;</code> 为不支持自增的主键生成策略标签。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">在这里对这些标签的使用方式进行举例说明</span><br><span class="line">&lt;resultMap&gt;用于定义如何将数据库查询结果映射到 Java 对象的属性。</span><br><span class="line">&lt;parameterMap&gt;目前基本不使用</span><br><span class="line">&lt;sql&gt;：这个标签用于定义可重用的 SQL 片段。例如：</span><br><span class="line">    &lt;sql id=&quot;userColumns&quot;&gt;</span><br><span class="line">      user_id, username, user_email</span><br><span class="line">    &lt;/sql&gt;</span><br><span class="line">&lt;include&gt;用于引用&lt;sql&gt;标签中的代码</span><br><span class="line">	&lt;select id=&quot;getUser&quot; resultMap=&quot;userResultMap&quot;&gt;</span><br><span class="line">      SELECT &lt;include refid=&quot;userColumns&quot;/&gt;</span><br><span class="line">      FROM users</span><br><span class="line">      WHERE user_id = #&#123;userId&#125;</span><br><span class="line">    &lt;/select&gt;</span><br><span class="line">&lt;selectKey&gt;：这个标签用于在插入语句执行后获取生成的主键值</span><br><span class="line">	&lt;insert id=&quot;insertUser&quot;&gt;</span><br><span class="line">      &lt;selectKey resultType=&quot;int&quot; keyProperty=&quot;id&quot; order=&quot;AFTER&quot;&gt;</span><br><span class="line">        SELECT LAST_INSERT_ID()</span><br><span class="line">      &lt;/selectKey&gt;</span><br><span class="line">      INSERT INTO users (username, user_email)</span><br><span class="line">      VALUES (#&#123;username&#125;, #&#123;email&#125;)</span><br><span class="line">    &lt;/insert&gt;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Dao 接口里的方法，参数不同时，方法能重载吗？</p>
+</blockquote>
+<p><strong>Dao 接口里的方法可以重载，但是 Mybatis 的 xml 里面的 ID 不允许重复。</strong>否则就会报错。那么尽管 Dao 中的方法可以重载，那么对应到 xml 文件中的实现方式是动态sql，即可以使用动态sql的方式，例如：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">&lt;</span><span class="keyword">select</span> id<span class="operator">=</span>&quot;getAllStu&quot; resultType<span class="operator">=</span>&quot;com.pojo.Student&quot;<span class="operator">&gt;</span></span><br><span class="line">  <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> student</span><br><span class="line">  <span class="operator">&lt;</span><span class="keyword">where</span><span class="operator">&gt;</span></span><br><span class="line">    <span class="operator">&lt;</span>if test<span class="operator">=</span>&quot;id != null&quot;<span class="operator">&gt;</span></span><br><span class="line">      id <span class="operator">=</span> #&#123;id&#125;</span><br><span class="line">    <span class="operator">&lt;</span><span class="operator">/</span>if<span class="operator">&gt;</span></span><br><span class="line">  <span class="operator">&lt;</span><span class="operator">/</span><span class="keyword">where</span><span class="operator">&gt;</span></span><br><span class="line"><span class="operator">&lt;</span><span class="operator">/</span><span class="keyword">select</span><span class="operator">&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>可以实现有无id两种方法重载。</p>
+<blockquote>
+<p>Dao 接口的工作原理是什么？</p>
+</blockquote>
+<p>通常一个 xml 映射文件，都会写一个 Dao 接口与之对应。Dao 接口就是人们常说的 <code>Mapper</code> 接口，接口的全限名，就是映射文件中的 namespace 的值；接口的方法名，就是映射文件中 <code>MappedStatement</code> 的 id 值，接口方法内的参数，就是传递给 sql 的参数。 <code>Mapper</code> 接口是没有实现类的，当调用接口方法时，接口全限名+方法名拼接字符串作为 key 值，可唯一定位一个 <code>MappedStatement</code> ，举例：<code>com.mybatis3.mappers.StudentDao.findStudentById</code> ，可以唯一找到 namespace 为 <code>com.mybatis3.mappers.StudentDao</code> 下面 <code>id = findStudentById</code> 的 <code>MappedStatement</code> 。在 MyBatis 中，每一个 <code>&lt;select&gt;</code>、 <code>&lt;insert&gt;</code>、 <code>&lt;update&gt;</code>、 <code>&lt;delete&gt;</code> 标签，都会被解析为一个 <code>MappedStatement</code> 对象。</p>
+<blockquote>
+<p>简述 MyBatis 的插件运行原理，以及如何编写一个插件</p>
+</blockquote>
+<p>MyBatis 仅可以编写针对 <code>ParameterHandler</code>、 <code>ResultSetHandler</code>、 <code>StatementHandler</code>、 <code>Executor</code> 这 4 种接口的插件，MyBatis 使用 JDK 的动态代理，为需要拦截的接口生成代理对象以实现接口方法拦截功能，每当执行这 4 种接口对象的方法时，就会进入拦截方法，具体就是 <code>InvocationHandler</code> 的 <code>invoke()</code> 方法，当然，只会拦截那些你指定需要拦截的方法。</p>
+<p>实现 MyBatis 的 <code>Interceptor</code> 接口并复写 <code>intercept()</code> 方法，然后在给插件编写注解，指定要拦截哪一个接口的哪些方法即可，记住，别忘了在配置文件中配置你编写的插件。</p>
+<blockquote>
+<p>MyBatis 动态 sql 是做什么的？都有哪些动态 sql？能简述一下动态 sql 的执行原理不？</p>
+</blockquote>
+<p>MyBatis 动态 sql 可以让我们在 xml 映射文件内，以标签的形式编写动态 sql，完成逻辑判断和动态拼接 sql 的功能。其执行原理为，使用 OGNL（OGNL 可以理解为一种访问和操作对象属性的方式，类似于在 Java 代码中使用点号来访问对象的属性。） 从 sql 参数对象中计算表达式的值，根据表达式的值动态拼接 sql，以此来完成动态 sql 的功能。</p>
+<blockquote>
+<p>你知道有哪些动态 sql 的标签？</p>
+</blockquote>
+<ul>
+<li><code>&lt;if&gt;&lt;/if&gt;</code></li>
+<li><code>&lt;where&gt;&lt;/where&gt;(trim,set)</code></li>
+<li><code>&lt;choose&gt;&lt;/choose&gt;（when, otherwise）</code></li>
+<li><code>&lt;foreach&gt;&lt;/foreach&gt;</code></li>
+<li><code>&lt;bind/&gt;</code></li>
+</ul>
+<blockquote>
+<p>MyBatis 是如何将 sql 执行结果封装为目标对象并返回的？都有哪些映射形式？</p>
+</blockquote>
+<p>有两种方式。</p>
+<ul>
+<li>第一种是使用 <code>&lt;resultMap&gt;</code> 标签，逐一定义列名和对象属性名之间的映射关系。</li>
+<li>第二种是使用 sql 列的别名功能，将<strong>列别名书写为对象属性名</strong>，比如 T_NAME AS NAME，对象属性名一般是 name，小写，但是列名不区分大小写，MyBatis 会忽略列名大小写，智能找到与之对应对象属性名，MyBatis 一样可以正常工作。</li>
+</ul>
+<p>有了列名与属性名的映射关系后，MyBatis 通过反射创建对象，同时使用反射给对象的属性逐一赋值并返回，那些找不到映射关系的属性，是无法完成赋值的。</p>
+<blockquote>
+<p>MyBatis 能执行一对一、一对多的关联查询吗？都有哪些实现方式，以及它们之间的区别</p>
+</blockquote>
+<p>能，MyBatis 不仅可以执行一对一、一对多的关联查询，还可以执行多对一，多对多的关联查询，多对一查询，其实就是一对一查询，只需要把 <code>selectOne()</code> 修改为 <code>selectList()</code> 即可；多对多查询，其实就是一对多查询，只需要把 <code>selectOne()</code> 修改为 <code>selectList()</code> 即可。</p>
+<p>关联对象查询，有两种实现方式，一种是单独发送一个 sql 去查询关联对象，赋给主对象，然后返回主对象。另一种是使用嵌套查询，嵌套查询的含义为使用 join 查询，一部分列是 A 对象的属性值，另外一部分列是关联对象 B 的属性值，好处是只发一个 sql 查询，就可以把主对象和其关联对象查出来。</p>
+<blockquote>
+<p>MyBatis 的 xml 映射文件中，不同的 xml 映射文件，id 是否可以重复？</p>
+</blockquote>
+<ul>
+<li>不同的 xml 映射文件，如果配置了 namespace，那么 id 可以重复；如果没有配置 namespace，那么 id 不能重复。</li>
+<li>原因就是 namespace+id 是作为 <code>Map&lt;String, MappedStatement&gt;</code> 的 key 使用的，如果没有 namespace，就剩下 id，那么，id 重复会导致数据互相覆盖。有了 namespace，自然 id 就可以重复，namespace 不同，namespace+id 自然也就不同。</li>
+</ul>
+<blockquote>
+<p>MyBatis 都有哪些 Executor 执行器？它们之间的区别是什么？</p>
+</blockquote>
+<p>MyBatis 有三种基本的 <code>Executor</code> 执行器：</p>
+<ul>
+<li><strong><code>SimpleExecutor</code>：</strong> 每执行一次 update 或 select，就开启一个 Statement 对象，用完立刻关闭 Statement 对象。</li>
+<li><strong><code>ReuseExecutor</code>：</strong> 执行 update 或 select，以 sql 作为 key 查找 Statement 对象，存在就使用，不存在就创建，用完后，不关闭 Statement 对象，而是放置于 Map&lt;String, Statement&gt;内，供下一次使用。简言之，就是重复使用 Statement 对象。</li>
+<li>**<code>BatchExecutor</code>**：执行 update（没有 select，JDBC 批处理不支持 select），将所有 sql 都添加到批处理中（addBatch()），等待统一执行（executeBatch()），它缓存了多个 Statement 对象，每个 Statement 对象都是 addBatch()完毕后，等待逐一执行 executeBatch()批处理。与 JDBC 批处理相同。</li>
+</ul>
+<p>作用范围：<code>Executor</code> 的这些特点，都严格限制在 SqlSession 生命周期范围内。</p>
+<blockquote>
+<p>MyBatis 是否可以映射 Enum 枚举类？</p>
+</blockquote>
+<p>MyBatis 可以映射枚举类，不单可以映射枚举类，MyBatis 可以映射任何对象到表的一列上。映射方式为自定义一个 <code>TypeHandler</code> ，实现 <code>TypeHandler</code> 的 <code>setParameter()</code> 和 <code>getResult()</code> 接口方法。 <code>TypeHandler</code> 有两个作用：</p>
+<ul>
+<li>一是完成从 javaType 至 jdbcType 的转换；</li>
+<li>二是完成 jdbcType 至 javaType 的转换，体现为 <code>setParameter()</code> 和 <code>getResult()</code> 两个方法，分别代表设置 sql 问号占位符参数和获取列查询结果。</li>
+</ul>
+<blockquote>
+<p>MyBatis 映射文件中，如果 A 标签通过 include 引用了 B 标签的内容，请问，B 标签能否定义在 A 标签的后面，还是说必须定义在 A 标签的前面？</p>
+</blockquote>
+<ol>
+<li>虽然 MyBatis 解析 xml 映射文件是按照顺序解析的，但是，被引用的 B 标签依然可以定义在任何地方，MyBatis 都可以正确识别。</li>
+<li>原理是，MyBatis 解析 A 标签，发现 A 标签引用了 B 标签，但是 B 标签尚未解析到，尚不存在，此时，MyBatis 会将 A 标签标记为未解析状态，然后继续解析余下的标签，包含 B 标签，待所有标签解析完毕，MyBatis 会重新解析那些被标记为未解析的标签，此时再解析 A 标签时，B 标签已经存在，A 标签也就可以正常解析完成了。</li>
+</ol>
+<blockquote>
+<p>为什么说 MyBatis 是半自动 ORM 映射工具？它与全自动的区别在哪里？</p>
+</blockquote>
+<p>Hibernate 属于全自动 ORM 映射工具，使用 Hibernate 查询关联对象或者关联集合对象时，可以根据对象关系模型直接获取，所以它是全自动的。而 MyBatis 在查询关联对象或关联集合对象时，需要手动编写 sql 来完成，所以，称之为半自动 ORM 映射工具。</p>
+<p>补充：Object Relational Mapping，简称ORM，即对象关系映射。一般用于实现面向对象编程语言里的对象和数据库中的之间的转换。</p>
+<blockquote>
+<p>MyBatis 有哪些优点？</p>
+</blockquote>
+<ol>
+<li>将数据库的操作逻辑和业务操作解耦合，使得开发人员可以专心业务逻辑的处理</li>
+<li>开发人员只写Sql就可以访问数据库，不需要关心各种数据库连接等额外的操作。各种Connection和Statement都交给了Mybatis来管理</li>
+<li>可以将数据库表的字段按照业务规则直接映射到DO层，不用再像JDBC一样需要业务代码来转换</li>
+<li>支持多种数据源，如POOLED，UNPOOLED，JNDI（自带的三种数据源，一般不使用，原因见后）</li>
+<li>支持动态SQL，大大减少了代码的开发量，如if&#x2F;foreach等常用的动态标签</li>
+<li>支持事务性的一级缓存，二级缓存和自定义缓存，其中，一级缓存是以session为生命周期，默认开启；二级缓存则是根据配置的算法来计算过期时间(FIFO，LRU等)，二级缓存如果操作不当容易产生脏数据，不建议使用</li>
+</ol>
+<blockquote>
+<p>为什么不适应MyBatis自带的数据源？</p>
+</blockquote>
+<ol>
+<li>空闲连接占用资源:连接池维护一定数量的空闲连接，这些连接会占用系统的资源，如果连接池设置过大，那么会浪费系统资源，如果设置过小，则会导致系统并发请求时连接不够用，影响系统性能。</li>
+<li>连接池大小调优困难:连接池的大小设置需要根据系统的并发请求量、数据库的性能和系统的硬件配置等因素综合考虑，而这些因素都是难以预测和调整的。</li>
+<li>连接泄漏:如果应用程序没有正确关闭连接，那么连接池中的连接就会泄漏，导致连接池中的连接数量不断增加，最终导致系统崩溃</li>
+</ol>
+<blockquote>
+<p>MyBatis 插件使用的原理是什么？</p>
+</blockquote>
+<p>Mybatis插件的运行原理主要涉及3个关键接口: Interceptor、Invocation 和 Plugin.</p>
+<ol>
+<li>Interceptor: 拦截器接口，定义了Mybatis插件的基本功能，包括插件的初始化、插件的拦截方法以及插的销毁方法。</li>
+<li>Invocation: 调用接口，表示Mybatis在执行SQL语句时的状态，包括SQL语句、参数、返回值等信息</li>
+<li>Plugin: 插件接口，Mybatis框架在执行SQL语句时，会将所有注册的插件封装成Plugin对象，通过Plugin对象实现对SQL语句的拦截和修改。</li>
+</ol>
+<p>插件的运行流程如下:</p>
+<ol>
+<li>首先，当Mybatis框架运行时，会将所有实现了Interceptor接口的插件进行初始化。</li>
+<li>初始化后，Mybatis框架会将所有插件和原始的Executor对象封装成一个InvocationChain对象。(这里使用的是责任链模式)</li>
+<li>每次执行SQL语句时，Mybatis框架都会通过InvocationChain对象依次调用所有插件的intercept方法，实现对SQL语句的拦截和修改</li>
+<li>最后，Mybatis框架会将修改后的SQL语句交给原始的Executor对象执行，并将执行结果返回给调用方通过这种方式，Mybatis插件可以对SQL语句进行拦截和修改，实现各种功能，例如查询缓存、分页、分库分表等</li>
+</ol>
+<blockquote>
+<p>MyBatis 工作的原理是什么？</p>
+</blockquote>
+<ol>
+<li><p>启动阶段:</p>
+<ol>
+<li>定义配置文件，如XML，注解</li>
+<li>解析配置文件，将配置文件加载到内存当中</li>
+</ol>
+</li>
+<li><p>运行阶段:</p>
+<p>读取内存中的配置文件，并根据配置文件实现对应的功能</p>
+</li>
+</ol>
+<p><a target="_blank" rel="noopener" href="https://www.yuque.com/hollis666/uzgwh1/rf9y4p">✅Mybatis的工作原理？ (yuque.com)</a></p>
+<blockquote>
+<p>什么是数据源、数据库和数据库连接池？</p>
+</blockquote>
+<p>数据源是连接管理的抽象，数据库是数据的存储，而数据库连接池是一种优化连接管理的机制，提高应用程序的性能和可伸缩性。</p>
+<blockquote>
+<p>MyBatis 是否支持延迟加载机制？其原理是什么？</p>
+</blockquote>
+<p>支持。<strong>延迟加载允许在需要时按需加载关联对象，而不是在查询主对象时立即加载所有关联对象。这样做可以提高查询性能和减少不必要的数据库访问。</strong> </p>
+<p>延迟加载的主要原理就是当开启了延迟加载功能时，当查询主对象时，MyBatis会生成一个代理对象，并将代理对象返回给调用者当后面需要访问这些关联对象时，代理对象会检查关联对象是否已加载。如果未加载，则触发额外的查询。</p>
+<p>查询结果返回后，MyBatis会将关联对象的数据填充到代理对象中，使代理对象持有关联对象的引用。这样，下次访问关联对象时，就可以直接从代理对象中获取数据，而无需再次查询数据库。</p>
+<blockquote>
+<p>使用 MyBatis 如何实现分页查询？</p>
+</blockquote>
+<p>MyBatis 可以通过两种方式实现分页：基于<strong>物理分页</strong>和基于<strong>逻辑分页</strong>。数据小的话无所谓，逻辑分页更简单点，数据量大的话一定使用物理分页，避免查询慢，也避免内存被撑爆</p>
+<ul>
+<li>物理分页指的是最终执行的SQL语句中进行分页，也就是SQL语句中带limit，这样的SQL语句执行之后返回的内容就是分页后的结果</li>
+<li>逻辑分页就是在SQL语句中不进行分页，照常全部查询，但是在查询到的结果集中进行分页。</li>
+</ul>
+<p>通常有四种做法：</p>
+<ol>
+<li>在SQL语句中添加limit语句。物理分页</li>
+<li>基于PageHelper分页插件实现分页。物理分页</li>
+<li>基于RowBounds实现分页，设置其 offset 和 limit 用于分页。逻辑分页</li>
+<li>基于MyBatis-Plus实现分页，可以根据传入的参数自动进行分页。物理+逻辑</li>
+</ol>
+<blockquote>
+<p>简述RowBounds分页的原理</p>
+</blockquote>
+<p>MyBatis的RowBounds是一个用于分页查询的简单POJO类，它包含两个属性offset和limit，分别表示分页查询的<strong>偏移量</strong>和<strong>每页查询的数据条数。</strong></p>
+<p>在使用RowBounds进行逻辑分页的时候，我们的SQL语句中是不需要指定分页参数的。就正常的查询即可，然后，在查询的时候，将RowBounds当做一个参数传递。这样，实际上在查询的时候，将会先将所有符合条件的记录返回，然后再在内存中进行分页，分页的方式是根据RowBounds中指定的offset和limit进行数据保留，即抛弃掉不需要的数据再返回。</p>
+<blockquote>
+<p>简述PageHelper的原理</p>
+</blockquote>
+<p>PageHelper是MyBatis中提供的分页插件，主要是用来做物理分页的。</p>
+<ol>
+<li>当我们在代码中使用 PageHelper.startPage(int pageNum,int pagesize) 设置分页参数之后，其实PageHelper会把他们存储到ThreadLocal中。</li>
+<li>PageHelper会在执行器的query方法执行之前，会从ThreadLocal中再获取分页参数信息，页码和页大小，然后执行分页算法，计算需要返回的数据块的起始位置和大小。最后，PageHelper会通过修改SQL语句的方式，在SQL后面动态拼接上limit语句，限定查询的数据范围，从而实现物理分页的效果。并且在查询结束后再清除ThreadLocal中的分页参数。</li>
+</ol>
+<h2 id="MyBatis-Plus-常见经典问答"><a href="#MyBatis-Plus-常见经典问答" class="headerlink" title="MyBatis Plus 常见经典问答"></a>MyBatis Plus 常见经典问答</h2><blockquote>
+<p>MyBatis Plus 有什么用？</p>
+</blockquote>
+<p>MyBatis Plus 是一个增强的MyBatis框架，有许多常用的实用功能。</p>
+<ol>
+<li>通用 Mapper：提供了一组通用的Mapper接口和实现（例如BaseMapper），可以更加快速的进行增删改查操作，不需要手写Sql语句。</li>
+<li>分页插件：提供了一种简单易用的分页功能，可以根据传入的分页参数自动计算出分页信息，无需手动编写分页SQL语句。</li>
+<li>自动生成代码：可以根据数据库表自动生成实体类、Mapper接口、Mapper XML映射文件等代码，大大减少开发人员的工作量。</li>
+<li>Lambda表达式支持：提供了 LambdaQueryWrapper 和 LambdaUpdateWrapper，可以使用Lambda表达式来构造查询条件和更新操作，使得代码更加简洁和易读。</li>
+<li>SQL注入器：提供了自定义的SQL注入器功能，可以自由扩展MyBatis的SQL语句，实现更加灵活的SQL操作。</li>
+<li>性能分析插件：提供了性能分析插件，可以帮助开发人员分析 SQL 执行效率，优化数据库操作。</li>
+</ol>
+<blockquote>
+<p>MyBatis-Plus 有哪些优缺点？</p>
+</blockquote>
+<p><strong>优点</strong></p>
+<ol>
+<li>简化开发: MyBatis-Plus封装了很多CRUD操作，使得我们不需要手写大量的SQL语句，从而减少了开发时间和代码量。</li>
+<li>提高性能: MyBatis-Plus的分页插件和缓存插件等能够提高SQL执行的效率和性能</li>
+<li>提供了代码生成器: MyBatis-Plus提供了一款强大的代码生成器，能够根据数据库表自动生成Java Bean、Mapper接门、Service接口等代码，大大提高了开发效率。</li>
+<li>易于扩展: MyBatis-Plus提供了丰富的插件接口，能够自定义插件，实现自己的业务需求.</li>
+</ol>
+<p><strong>缺点</strong></p>
+<ol>
+<li>技术选型限制: MyBatis-Plus是基于MyBatis的增强工具，因此使用MyBatis-Plus需要熟悉MyBatis的使用，对于不熟悉MyBatis的开发人员来说可能需要一些时间学习。</li>
+<li>版本依赖问题: MyBatis-Plus的版本依赖于MyBatis的版本，因此需要注意版本的兼容性</li>
+<li>自动映射不可靠: MyBatis-Plus提供了自动映射功能，但是在某些情况下可能不够可靠，需要手动进行映射。</li>
+<li>代码生成器生成的代码可能需要手动调整: MyBatis-Plus的代码生成器可以自动生成大量的代码，但是有时候生成的代码可能不符合项目的需求，需要手动进行调整</li>
+</ol>
+<blockquote>
+<p>MyBatis-Plus 分页原理是什么？</p>
+</blockquote>
+<p>MyBatis-Plus支持<strong>逻辑分页和物理分页</strong>两种方式，并且可以根据需要自由选择。默认情况下，MyBatis-Plus使用的是物理分页。</p>
+<p>逻辑分页是在查询结果集中进行分页，即先查询出全部结果，然后在内存中对结果进行分页。逻辑分页的优点是实现简单，可以对结果进行任意操作(例如排序、筛选等)，缺点是如果数据量过大，会导致内存溢出等问题。</p>
+<p>物理分页是在数据库中进行分页，即直接在SQL语句中加入LIMIT语句，只查询所需的部分数据。物理分页的优点是可以减少内存占用，减轻数据库的负载，缺点是无法对结果进行任意操作。</p>
+<p>默认情况下，MyBatis-Plus使用的是物理分页。如果需要使用逻辑分页，可以在分页插件的配置中指定分页的类型。</p>
+<h2 id="SpringBoot-常见经典问答"><a href="#SpringBoot-常见经典问答" class="headerlink" title="SpringBoot 常见经典问答"></a>SpringBoot 常见经典问答</h2></div><div class="article-licensing box"><div class="licensing-title"><p>深入理解 Java 原理之SSM</p><p><a href="https://spy955.github.io/2023/08/29/Java八股之SSM/">https://spy955.github.io/2023/08/29/Java八股之SSM/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>Sun Peiyuan</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2023-08-29</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2023-08-31</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icons" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="icon fab fa-creative-commons"></i></a><a class="icons" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="icon fab fa-creative-commons-by"></i></a><a class="icons" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="icon fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/Interview-preparation/">Interview preparation</a></div><!--!--></article></div><div class="card"><div class="card-content"><h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3><div class="buttons is-centered"><a class="button donate" href="/" target="_blank" rel="noopener" data-type="afdian"><span class="icon is-small"><i class="fas fa-charging-station"></i></span><span>爱发电</span></a><a class="button donate" data-type="alipay"><span class="icon is-small"><i class="fab fa-alipay"></i></span><span>支付宝</span><span class="qrcode"><img src="/" alt="支付宝"></span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="buymeacoffee"><span class="icon is-small"><i class="fas fa-coffee"></i></span><span>送我杯咖啡</span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="patreon"><span class="icon is-small"><i class="fab fa-patreon"></i></span><span>Patreon</span></a></div></div></div><nav class="post-navigation mt-4 level is-mobile"><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2023/08/28/Java%E5%85%AB%E8%82%A1%E4%B9%8BJVM/"><span class="level-item">深入理解 Java 原理之 JVM</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><div class="card"><div class="card-content"><h3 class="title is-5">评论</h3><div id="disqus_thread"><noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript></div><script>var disqus_config = function () {
+            this.page.url = 'https://spy955.github.io/2023/08/29/Java%E5%85%AB%E8%82%A1%E4%B9%8BSSM/';
+            this.page.identifier = '2023/08/29/Java八股之SSM/';
+        };
+        (function() {
+            var d = document, s = d.createElement('script');  
+            s.src = '//' + 'SPY' + '.disqus.com/embed.js';
+            s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+        })();</script></div></div></div><div class="column column-left is-4-tablet is-4-desktop is-4-widescreen  order-1"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar" src="/img/hutao.jpg" alt="SPY"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">SPY</p><p class="is-size-6 is-block">一个热爱并追求技术的小白</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>上海</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">18</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">3</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">10</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/Spy955" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile is-multiline"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/Spy955"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Facebook" href="https://facebook.com"><i class="fab fa-facebook"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Twitter" href="https://twitter.com"><i class="fab fa-twitter"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Dribbble" href="https://dribbble.com"><i class="fab fa-dribbble"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="RSS" href="/"><i class="fas fa-rss"></i></a></div></div></div><!--!--><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/Algorithm/"><span class="level-start"><span class="level-item">Algorithm</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/Java/"><span class="level-start"><span class="level-item">Java</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/categories/MySQL/"><span class="level-start"><span class="level-item">MySQL</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="recent-posts"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-08-29T01:31:58.000Z">2023-08-29</time></p><p class="title"><a href="/2023/08/29/Java%E5%85%AB%E8%82%A1%E4%B9%8BSSM/">深入理解 Java 原理之SSM</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-08-28T01:20:05.000Z">2023-08-28</time></p><p class="title"><a href="/2023/08/28/Java%E5%85%AB%E8%82%A1%E4%B9%8BJVM/">深入理解 Java 原理之 JVM</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-08-26T08:28:56.000Z">2023-08-26</time></p><p class="title"><a href="/2023/08/26/Java%E5%85%AB%E8%82%A1%E4%B9%8B%E9%9B%86%E5%90%88/">深入 Java 原理之集合篇</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-08-24T09:40:47.000Z">2023-08-24</time></p><p class="title"><a href="/2023/08/24/JavaSE/">深入学习 Java 原理之基础篇</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-08-16T06:11:29.000Z">2023-08-16</time></p><p class="title"><a href="/2023/08/16/Data-Structure/">数据结构</a></p></div></article></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2023/"><span class="level-start"><span class="level-item">2023</span></span><span class="level-end"><span class="level-item tag">12</span></span></a></li><li><a class="level is-mobile" href="/archives/2022/"><span class="level-start"><span class="level-item">2022</span></span><span class="level-end"><span class="level-item tag">6</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/Algorithm/"><span class="tag">Algorithm</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Computer-Basics/"><span class="tag">Computer Basics</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Data-Structure/"><span class="tag">Data Structure</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Interview-preparation/"><span class="tag">Interview preparation</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Java/"><span class="tag">Java</span><span class="tag">7</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Java-Project/"><span class="tag">Java_Project</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/MySQL/"><span class="tag">MySQL</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/SQL/"><span class="tag">SQL</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Web/"><span class="tag">Web</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/web/"><span class="tag">web</span><span class="tag">1</span></a></div></div></div></div></div><div class="card widget" data-type="subscribe-email"><div class="card-content"><div class="menu"><h3 class="menu-label">订阅更新</h3><form action="https://feedburner.google.com/fb/a/mailverify" method="post" target="popupwindow" onsubmit="window.open(&#039;https://feedburner.google.com/fb/a/mailverify?uri=&#039;,&#039;popupwindow&#039;,&#039;scrollbars=yes,width=550,height=520&#039;);return true"><input type="hidden" value="" name="uri"><input type="hidden" name="loc" value="en_US"><div class="field has-addons"><div class="control has-icons-left is-expanded"><input class="input" name="email" type="email" placeholder="Email"><span class="icon is-small is-left"><i class="fas fa-envelope"></i></span></div><div class="control"><input class="button" type="submit" value="订阅"></div></div></form></div></div></div></div><!--!--></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img src="/img/favicon.png" alt="SPY 的博客" height="28"></a><p class="is-size-7"><span>&copy; 2023 Sun Peiyuan</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a></p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/Spy955"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script><script>moment.locale("zh-cn");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.js" defer></script><script>window.addEventListener("load", () => {
+      window.cookieconsent.initialise({
+        type: "info",
+        theme: "edgeless",
+        static: false,
+        position: "bottom-left",
+        content: {
+          message: "此网站使用Cookie来改善您的体验。",
+          dismiss: "知道了！",
+          allow: "允许使用Cookie",
+          deny: "拒绝",
+          link: "了解更多",
+          policy: "Cookie政策",
+          href: "https://www.cookiesandyou.com/",
+        },
+        palette: {
+          popup: {
+            background: "#edeff5",
+            text: "#838391"
+          },
+          button: {
+            background: "#4b81e8"
+          },
+        },
+      });
+    });</script><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><!--!--><!--!--><!--!--><script src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script src="/js/insight.js" defer></script><script>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/wanko.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body></html>
